@@ -1,0 +1,8 @@
+#!/usr/bin/perl
+# Copyright 2006 Darin Franklin. All rights reserved.
+# convert Alpha Sign "3-byte" protocol to "1-byte" protocol
+print "\0\0\0\0\0";
+while (<>) {
+    s/_([0-9A-Fa-f]{2})/chr(oct("0x$1"))/eg;
+    print;
+}

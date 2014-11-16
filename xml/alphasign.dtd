@@ -1,0 +1,306 @@
+<!ELEMENT alphasign 
+	  ( memoryConfig
+	  | text
+	  | string
+	  | dots
+	  | sequence
+	  | dayScheduleTable
+	  | timeScheduleTable
+	  | timeOfDay
+	  | dayOfWeek
+	  | beep
+	  | speakerMode
+	  | timeFormat
+	  | softReset
+	  | dimmingMode
+	  | clearSerialErrorStatusRegister
+	  | calendarDate
+	  | counterConfig
+	  | temperatureDisplay
+	  | temperatureOffset
+	  | signAddress
+	  | readText
+	  | readString
+	  | readDots
+	  | readLargeDots
+	  | readRGBDots
+	  | readTimeOfDay
+	  | readSpeakerMode
+	  | readGeneralInfo
+	  | readMemoryPoolSize
+	  | readMemoryConfig
+	  | readMemoryDump
+	  | readDayOfWeek
+	  | readTimeFormat
+	  | readTimeScheduleTable
+	  | readSerialErrorStatusRegister
+	  | readNetworkQuery
+	  | readSequence
+	  | readDayScheduleTable
+	  | readCounters
+	  | readAlphavisionDOTSMemoryConfig
+	  | readRunFileTime
+	  | readDate
+	  | readDaylightSavingTime
+	  | readAutoModeTable
+	  | readTemperatureOffset
+	  )*
+>
+<!ATTLIST alphasign typeCode CDATA #IMPLIED>
+<!ATTLIST alphasign signAddress CDATA #IMPLIED>
+
+<!ELEMENT memoryConfig (textConfig|stringConfig|dotsConfig)>
+
+<!ELEMENT textConfig (EMPTY)>
+<!ATTLIST textConfig label CDATA #REQUIRED>
+<!ATTLIST textConfig size CDATA #REQUIRED>
+<!ATTLIST textConfig start CDATA #IMPLIED>
+<!ATTLIST textConfig stop CDATA #IMPLIED>
+<!ATTLIST textConfig locked CDATA #IMPLIED>
+
+<!ELEMENT stringConfig (EMPTY)>
+<!ATTLIST stringConfig label CDATA #REQUIRED>
+<!ATTLIST stringConfig size CDATA #REQUIRED>
+
+<!ELEMENT dotsConfig (EMPTY)>
+<!ATTLIST dotsConfig label CDATA #REQUIRED>
+<!ATTLIST dotsConfig height CDATA #REQUIRED>
+<!ATTLIST dotsConfig width CDATA #REQUIRED>
+<!ATTLIST dotsConfig colors CDATA #IMPLIED>
+<!ATTLIST dotsConfig locked CDATA #IMPLIED>
+
+
+<!ELEMENT text (#PCDATA
+	        |msg
+                |red
+                |dimred
+                |orange
+		|brown
+		|yellow
+                |amber
+		|green
+		|dimgreen
+		|rainbow1
+		|rainbow2
+		|colormix
+		|autocolor
+		|CR
+		|FF
+		|extendedChar
+		|time
+		|date
+		|callString
+		|callDots
+		|callLargeDots
+		|noHold
+		|speed1
+		|speed2
+		|speed3
+		|speed4
+		|speed5
+		|speedControl
+		|wideModeOn
+		|wideModeOff
+		|doubleHighModeOn
+		|doubleHighModeOff
+		|trueDescendersModeOn
+		|trueDescendersModeOff
+		|fixedWidthModeOn
+		|fixedWidthModeOff
+		|flashModeOn
+		|flashModeOff
+		|wideOn
+		|wideOff
+		|doubleWideOn
+		|doubleWideOff
+		|trueDescendersOn
+		|trueDescendersOff
+		|fixedWidthOn
+		|fixedWidthOff
+		|doubleHighOn
+		|doubleHighOff
+		|fancyOn
+		|fancyOff
+		|shadowOn
+		|shadowOff
+		|standard5
+		|slim5
+		|stroke5
+		|wide5
+		|wideStroke5
+		|custom5
+		|standard7
+		|slim7
+		|stroke7
+		|wide7
+		|custom7
+		|fancy7
+		|slimFancy7
+		|wideFancy7
+		|shadow7
+		|shadowFancy7
+		|strokeFancy7
+		|wideStroke7
+		|wideStrokeFancy7
+		|standard10
+		|custom10
+		|custom15
+		|fullHeightFancy
+		|fullHeightStandard
+		|auxPortOn
+		|auxPortOff
+		)*>
+<!ATTLIST text label CDATA #REQUIRED>
+<!ATTLIST text mode (hold
+		    |rotate
+		    |flash
+		    |scroll
+		    |compressedRotate
+		    |twinkle
+		    |sparkle
+		    |snow
+		    |interlock
+		    |switch
+		    |slide
+		    |cycleColors
+		    |spray
+		    |starburst
+		    |automode
+		    |wipeUp
+		    |wipeDown
+		    |wipeLeft
+		    |wipeRight
+		    |wipeIn
+		    |wipeOut
+		    |rollUp
+		    |rollDown
+		    |rollLeft
+		    |rollRight
+		    |rollIn
+		    |rollOut
+		    |welcome
+		    |slotMachine
+		    |newsFlash
+		    |thankYou
+		    |noSmoking
+		    |drinkAndDrive
+		    |runningAnimal
+		    |fish
+		    |fireworks
+		    |turboCar
+		    |baloon
+		    |cherryBomb
+		    ) #IMPLIED>
+<!ATTLIST text trailingMode CDATA #IMPLIED>
+<!ATTLIST text position (middle|top|bottom|fill) #IMPLIED>
+
+<!ELEMENT msg (#PCDATA)>
+
+<!ELEMENT string (#PCDATA)>
+<!ATTLIST string label CDATA #REQUIRED>
+
+<!ELEMENT dots (row)*>
+<!ATTLIST dots label CDATA #REQUIRED>
+
+<!ELEMENT row (#PCDATA)>
+
+<!ELEMENT sequence (EMPTY)>
+<!ATTLIST sequence labels CDATA #REQUIRED>
+<!ATTLIST sequence mode (ignoreTimeSchedule|deleteAtStopTime) #IMPLIED>
+<!ATTLIST sequence locked (true|false) #IMPLIED>
+
+<!ELEMENT dayScheduleTable (EMPTY)>
+<!ATTLIST dayScheduleTable label CDATA #REQUIRED>
+<!ATTLIST dayScheduleTable start CDATA #REQUIRED>
+<!ATTLIST dayScheduleTable stop  CDATA #REQUIRED>
+
+<!ELEMENT timeScheduleTable (EMPTY)>
+<!ATTLIST timeScheduleTable label CDATA #REQUIRED>
+<!ATTLIST timeScheduleTable start CDATA #REQUIRED>
+<!ATTLIST timeScheduleTable stop  CDATA #REQUIRED>
+
+<!ELEMENT timeOfDay (EMPTY)>
+<!ATTLIST timeOfDay hour   CDATA #REQUIRED>
+<!ATTLIST timeOfDay minute CDATA #REQUIRED>
+
+<!ELEMENT dayOfWeek (EMPTY)>
+<!ATTLIST dayOfWeek day CDATA #REQUIRED>
+
+<!ELEMENT speakerMode (EMPTY)>
+<!ATTLIST speakerMode enabled (true|false) #REQUIRED>
+
+<!ELEMENT timeFormat (EMPTY)>
+<!ATTLIST timeFormat format (24-hour|am-pm) #REQUIRED>
+
+<!ELEMENT softReset (EMPTY)>
+
+<!ELEMENT beep (EMPTY)>
+<!ATTLIST beep type (on|off|long|short) #IMPLIED>
+<!ATTLIST beep frequency CDATA #IMPLIED>
+<!ATTLIST beep duration CDATA #IMPLIED>
+<!ATTLIST beep repeat CDATA #IMPLIED>
+
+<!ELEMENT dimmingMode (EMPTY)>
+<!ATTLIST dimmingMode threshold CDATA #IMPLIED>
+<!ATTLIST dimmingMode level CDATA #IMPLIED>
+<!ATTLIST dimmingMode start CDATA #IMPLIED>
+<!ATTLIST dimmingMode stop CDATA #IMPLIED>
+
+<!ELEMENT clearSerialErrorStatusRegister (EMPTY)>
+
+<!ELEMENT calendarDate (EMPTY)>
+<!ATTLIST calendarDate day CDATA #REQUIRED>
+<!ATTLIST calendarDate month CDATA #REQUIRED>
+<!ATTLIST calendarDate year  CDATA #REQUIRED>
+
+<!ELEMENT counterConfig (counter+)>
+<!ELEMENT counter (counterOptions,counterValues,counterSchedule)>
+<!ATTLIST counter id CDATA #REQUIRED>
+<!ELEMENT counterOptions (EMPTY)>
+<!ATTLIST counterOptions enabled CDATA #IMPLIED>
+<!ATTLIST counterOptions eventToCount CDATA #REQUIRED>
+<!ATTLIST counterOptions autoReset CDATA #IMPLIED>
+<!ELEMENT counterValues (EMPTY)>
+<!ATTLIST counterValues start CDATA #REQUIRED>
+<!ATTLIST counterValues increment CDATA #REQUIRED>
+<!ATTLIST counterValues current CDATA #REQUIRED>
+<!ATTLIST counterValues target CDATA #REQUIRED>
+<!ELEMENT counterSchedule (EMPTY)>
+<!ATTLIST counterSchedule start CDATA #REQUIRED>
+<!ATTLIST counterSchedule stop CDATA #REQUIRED>
+<!ATTLIST counterSchedule weekends CDATA #REQUIRED>
+
+<!ELEMENT temperatureDisplay (EMPTY)>
+<!ATTLIST temperatureDisplay units CDATA #REQUIRED>
+
+<!ELEMENT temperatureOffset (EMPTY)>
+<!ATTLIST temperatureOffset offset CDATA #REQUIRED>
+
+<!ELEMENT signAddress (EMPTY)>
+<!ATTLIST signAddress address CDATA #REQUIRED>
+
+<!ELEMENT readText (EMPTY)>
+<!ELEMENT readString (EMPTY)>
+<!ELEMENT readDots (EMPTY)>
+<!ELEMENT readLargeDots (EMPTY)>
+<!ELEMENT readRGBDots (EMPTY)>
+<!ELEMENT readTimeOfDay (EMPTY)>
+<!ELEMENT readSpeakerMode (EMPTY)>
+<!ELEMENT readGeneralInfo (EMPTY)>
+<!ELEMENT readMemoryPoolSize (EMPTY)>
+<!ELEMENT readMemoryConfig (EMPTY)>
+<!ELEMENT readMemoryDump (EMPTY)>
+<!ELEMENT readDayOfWeek (EMPTY)>
+<!ELEMENT readTimeFormat (EMPTY)>
+<!ELEMENT readTimeScheduleTable (EMPTY)>
+<!ELEMENT readSerialErrorStatusRegister (EMPTY)>
+<!ELEMENT readNetworkQuery (EMPTY)>
+<!ELEMENT readSequence (EMPTY)>
+<!ELEMENT readDayScheduleTable (EMPTY)>
+<!ELEMENT readCounters (EMPTY)>
+<!ELEMENT readAlphavisionDOTSMemoryConfig (EMPTY)>
+<!ELEMENT readRunFileTime (EMPTY)>
+<!ELEMENT readDate (EMPTY)>
+<!ELEMENT readDaylightSavingTime (EMPTY)>
+<!ELEMENT readAutoModeTable (EMPTY)>
+<!ELEMENT readTemperatureOffset (EMPTY)>

@@ -1,0 +1,1935 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+  <head>
+    <title>BBXML - An XML Interface for BetaBrite Signs: Users Guide</title>
+    <link rel="stylesheet" href="bbxml.css"/>
+    <style type="text/css">
+span.bb {
+  font-weight: bold;
+}
+    </style>
+  </head>
+
+  <body>
+    <h1 class="title">BBXML User's Guide</h1>
+
+    <p>Version: 1.3<br/>
+       Author: <a href="mailto:dfranklin@pobox.com">Darin Franklin</a>
+    </p>
+
+    <p>BBXML is an XML interface for controlling the scrolling LED
+    signs made by <a href="http://www.ams-i.com/">Adaptive Micro
+    Systems</a>, including
+    the <a href="http://www.betabrite.com/">BetaBrite</a>
+    and <a
+    href="http://www.adaptivedisplays.com/Pages/a_one.htm">Alpha</a>
+    models.</p>
+
+    <p>Adaptive provides complete documentation for
+    their <a href="http://www.ams-i.com/Pages/97088061.htm">Alpha Sign
+    Communication Protocol</a>, which allows the sign to be controlled
+    from a computer's serial port.  The Alpha Sign Protocol offers
+    complete access to all of the sign's features, but it is a rather
+    arcane message format.  The BBXML interface makes this easier, by
+    providing access to all of the commands in the protocol through
+    simple XML messages.  BBXML works with all BetaBrite and Alpha
+    signs that support the Alpha Sign Protocol.</p>
+
+    <p>This document contains <a href="#setup">setup
+    instructions</a>, a <a href="#overview">usage summary</a>, and
+    a complete <a href="#reference">command reference</a>.</p>
+
+    <h1>Download</h1>
+
+    <p>The package is available at <a
+    href="http://pobox.com/~dfranklin/bbxml/index.html">http://pobox.com/~dfranklin/bbxml/index.html</a>.</p>
+
+    <h1>Required Components</h1>
+
+    <p>
+      The core component of BBXML is a single XSLT file,
+      <a
+      href="../xml/alphasign.xsl"><span
+      class="filename">alphasign.xsl</span></a>. That is really all
+      you need from this package.  If you have an old sign, you might
+      need to
+      use <a
+      href="../bin/bb3to1"><span class="filename">bb3to1</span></a>
+      or <a
+      href="../src/bb3to1.c"><span
+      class="filename">bb3to1.c</span></a>, as explained later, to
+      postprocess the XSLT output.
+    </p>
+
+    <p>
+      To run the examples in this document, you need an XSLT processor
+      that executes from the command line and writes to standard
+      output.  For this purpose, I
+      recommend <a
+      href="http://xmlsoft.org/XSLT/xsltproc.html">xsltproc</a>, which
+      is part of the <a href="http://xmlsoft.org/XSLT/">libxslt</a>
+      package.</p>
+
+    <p>Some of the example and utility scripts require Perl, but Perl
+    is not required for general usage.</p>
+
+    <p>The examples were written for Linux, but Linux is not required.
+    To make this work on your system, you need to know how to
+    configure the serial port, how to write to the serial port, and
+    how to run an XSLT processor.</p>
+
+    <h1>Installation</h1>
+
+    <p>Unpack the <span class="filename">bbxml_1.3.tar.gz</span> file
+      into <span class="filename">/opt</span>, or any convenient
+      location.</p>
+
+
+
+
+    <h1><a name="setup">Initial Setup</a></h1>
+
+    <h2>Wiring</h2>
+
+    <p>You need to connect the sign to your computer's RS-232 serial
+    port with a properly-wired cable.  If your sign didn't come with a
+    cable, you can purchase one from Adaptive (it's included with
+    their <a
+    href="http://www.adaptivedisplays.com/Pages/alphamsg.htm">Windows
+    software</a>), or you
+    can <a
+    href="http://www.ams-i.com/cgi/wwwthreads/showthreaded.pl?Cat=&Board=UserForum&Number=1053&page=&view=&sb=#Post1053">make
+    one yourself</a>.
+    See <a href="http://www.ams-i.com/Media/02-0010.pdf">TechMemo
+    02-0010</a> on Adaptive's site for pinouts and wiring details.</p>
+
+    <p>
+      If you want to make a cable, I recommend using
+      a <a
+      href="http://www.cablewholesale.com/cgi-bin/search.cgi?text=db9+female+rj12">modular
+      adapter</a>
+      and <a
+      href="http://www.cablewholesale.com/cgi-bin/search.cgi?text=RJ12+silver+satin">silver
+      satin cable</a>.  (Those links are just examples; I don't know
+      anything about that site.)  You need to connect the TxD pin (3)
+      on the computer to the RxD pin (3) on the sign, and the RxD pin
+      (2) on the computer to the TxD pin (4) on the sign.  You also
+      need to connect the signal ground pins to each other (pin 5 on
+      the computer to pin 6 on sign).  Make sure that no stray wire
+      ends are touching.  The Alpha signs use those "extra" wires for
+      RS-485.  If they get shorted, all kinds of bad things will
+      happen.
+    </p>
+
+    <h2>Environment Variables</h2>
+
+    <p>The included scripts assume that the BBXML package is installed
+    at <span class="filename">/opt/bbxml</span>, and that the sign is
+    connected to the port
+    at <span class="filename">/dev/betabrite</span>.  You can override
+    these values by setting the the <code>BBXML_HOME</code> and
+    <code>BBXML_PORT</code> environment variables.  For example:</p>
+
+<code class="cmd">
+    export BBXML_HOME=/home/darin/opt/bbxml<br/>
+    export BBXML_PORT=/dev/ttyS2
+</code>
+
+    <p>You will probably also want to add the bin directory to your PATH</p>
+
+<code class="cmd">
+    export PATH=$PATH:/opt/bbxml/bin
+</code>
+
+    <h2>Serial Port Setup</h2>
+
+    <p>First, create a symbolic link, named <span
+    class="filename">/dev/betabrite</span>, which points to the serial
+    port that your sign is connected to.  For example, if your sign is
+    on <span class="filename">/dev/ttyS0</span>, create the link like
+    this.</p>
+
+    <code class="cmd">ln -s /dev/ttyS0 /dev/betabrite</code>
+
+    <p>If you do not want to use
+    "<span class="filename">/dev/betabrite</span>" as the port name,
+    then you must set the BBXML_PORT environment variable, as
+    described previously.</p>
+
+    <p>Before you can send anything to the sign, you need to configure
+    the serial port to use 9600 baud, 7 bits, even parity, and 1 stop
+    bit. (See Adaptive's docs for other valid configurations.)  Also,
+    disable postprocessing and line ending translation, if necessary.
+    On Linux, use <span class="filename">stty</span> to this:</p>
+
+    <code class="cmd">stty -F /dev/betabrite 9600 -opost -ocrnl -onlcr cs7 parenb -parodd clocal</code>
+
+    <p>As a shortcut, you can execute the stty command above by
+    running this command instead:</p>
+
+    <code class="cmd">bbxml --initport</code>
+
+    <p>If you are running Windows, then you should be able to find a
+    dialog in Control Panel to change these settings.</p>
+
+    <h1><a name="overview">Usage Summary</a></h1>
+
+    <h2>Command Line</h2>
+
+    <p>Write some <a href="#reference">commands</a> in a file, <span
+    class="filename">commands.xml</span>, and then send it to the sign
+    like this:</p>
+
+    <code class="cmd">bbxml commands.xml</code>
+
+    <p>The rest of this section explains the gory details. </p>
+
+    <h2>How It Works</h2>
+
+    <p>The <span
+    class="filename"><a
+    href="../xml/alphasign.xsl">alphasign.xsl</a></span> file contains
+    the all of the rules that the XSLT processor uses to transform
+    your XML document into an Alpha Sign Protocol message.
+    </p>
+
+    <p>This is the basic procedure for sending commands to the
+    sign.</p>
+
+    <ol>
+      <li>Write an XML file with the commands that you want to send.</li>
+      <li>Transform it into an Alpha Sign Protocol message using XSLT.</li>
+      <li>Write the Alpha Sign Protocol message to the serial port.</li>
+    </ol>
+
+    <p>
+      The <span class="filename">bbxml</span> script does steps 2 and
+      3 for you.
+    </p>
+
+
+    <h3>Creating the XML File</h3>
+
+    <p>Write the commands in a text file. Here is an example, <span
+    class="filename">commands.xml</span>:</p>
+
+      <pre class="codequote">
+&lt;alphasign&gt;
+  &lt;text label="0"&gt;BetaBrite&lt;/text&gt;
+&lt;/alphasign&gt;
+</pre>    
+
+    <h3>Transforming into Alpha Sign Protocol</h3>
+
+    <p>Use the XSLT processor to transform your XML document with the
+    <span class="filename">alphasign.xsl</span> stylesheet.</p>
+
+    <code class="cmd">xsltproc alphasign.xsl commands.xml > commands.txt</code>
+
+    <p>The output is the 3-byte flavor of the Alpha Sign Protocol.</p>
+
+    <code class="cmd">cat commands.txt</code>
+    <pre class="codequote">
+_01Z00_02A0BetaBrite_04
+</pre>
+
+    <h3>Writing to the Sign</h3>
+
+    <p>
+      To send the commands to the sign,
+      simply <span class="filename">cat</span> it to the device
+      file:</p>
+
+    <code class="cmd">cat commands.txt > /dev/betabrite</code>
+
+    <p>If all is well, you should see "BetaBrite" scrolling across the
+    sign. If that didn't work, don't worry.  Read the next section
+    about the 3-byte protocol.</p>
+
+    <h4>3-Byte vs. 1-Byte Protocol</h4>
+
+    <p>
+      The original version of the Alpha Sign Protocol used ASCII
+      control characters, such as SOH (0x01, '^A'), for commands.
+      This is known as the 1-byte protocol.  Later versions allowed
+      for the commands to be written in printable ASCII characters
+      instead of control codes.  The 2-byte ASCII printable format
+      uses "]" as an escape character, followed by a single character
+      to indicate the command.  The 3-byte format uses "_" as the
+      escape character, followed by a two digit hex value.
+    </p>
+
+    <p>
+      The <span class="filename">alphasign.xsl</span> transform
+      outputs messages in the 3-byte format.  If your sign has an
+      old firmware, such as my BetaBrite 1040 ("1040-4402a EZII",
+      1995), it might only be able to read the 1-byte protocol.  Here
+      is a simple test to see if your sign can read the 3-byte
+      protocol.
+    </p>
+
+    <p>
+      <code class="cmd">echo "_01Z00_02A0hello_04" &gt; /dev/betabrite</code>
+    </p>
+
+    <p>If you see "hello" on your sign, then the 3-byte protocol works
+    for you.  If it didn't work, try using the
+    included <span class="filename">bb3to1</span> script to convert
+    the message to 1-byte format.
+    </p>
+
+    <p>
+      <code class="cmd">echo "_01Z00_02A0hello_04" | bb3to1 &gt; /dev/betabrite</code>
+    </p>
+
+    <p>That should work for every sign.  If it didn't, check your
+      wiring and port configuration and try again.</p>
+
+    <p>Do this to clear the message:</p>
+    <p>
+      <code class="cmd">echo "_01Z00_02A0_04" &gt; /dev/betabrite</code>
+      <br/>
+    or
+      <br/>
+      <code class="cmd">echo "_01Z00_02A0_04" | bb3to1 &gt; /dev/betabrite</code>
+    </p>
+
+    <h4>More about bb3to1</h4>
+
+    <p>
+      If you convert the commands.txt file from above
+      with <span class="filenaem">bb3to1</span>, you can see the
+      difference in message format.
+    </p>
+
+    <code class="cmd">
+      bb3to1 commands.txt > commands.1.txt<br/>
+      cat -v commands.1.txt
+    </code>
+    <pre class="codequote">
+\0\0\0\0\0^AZ00^BAHBetaBrite^D
+</pre>
+
+    <p>
+      You may be wondering why we don't just output the 1-byte format
+      from XSLT, since all signs understand that format.  We can't do
+      that because
+      the <a href="http://www.w3.org/TR/REC-xml/#charsets">XML 1.0
+      spec</a> does not allow ASCII control characters
+      (<code>#x00</code>-<code>#x1F</code>), except for TAB, CR, and
+      LF.  Therefore, we write the 3-byte ASCII printable version from
+      XSLT and then convert it
+      with <span class="filename">bb3to1</span>, if necessary.
+    </p>
+
+    <p>
+      If, for some reason, you can't use Perl, I have included a
+      version of <span class="filename">bb3to1</span> written in
+      C: <a
+      href="../src/bb3to1.c"><span
+      class="filename">bb3to1.c</span></a>.  Compile it and then use
+      it in place of the Perl script.<br/>
+      <code class="cmd">gcc -o bb3to1 bb3to1.c</code>
+    </p>
+
+
+    <h1><a name="reference">XML Command Reference</a></h1>
+
+    <h2>Alpha Sign Protocol Basics</h2>
+
+    <p>There are just a few things that you need to know about how the
+    sign works before you can start writing <a href="#cmdindex">XML
+    commands</a>.</p>
+
+    <h3>Files</h3>
+
+    <p>The sign holds data in memory locations called "files".  There
+    are three file types: TEXT, STRING, and DOTS.  TEXT files hold the
+    messages that the sign displays.  STRING files are like variables
+    that you can include in TEXT files.  DOTS files are also like
+    variables, but contain graphics instead of characters.</p>
+
+    <h3>Labels</h3>
+
+    <p>Each file has a 1-character label.  The three file types are
+    kept in separate name spaces, so you can use the same label for a
+    TEXT, a STRING, and a DOTS file without conflict.  Valid file
+    labels are listed in Appendix A of the <a
+    href="http://www.ams-i.com/Pages/97088061.htm">protocol
+    documentation</a>.</p>
+
+    <p>There is one special TEXT file, known as the Priority TEXT
+    file, which has the label, "<span class="attrval">0</span>". Any
+    message sent with the "<span class="attrval">0</span>" label will
+    be displayed immediately and will continue to be displayed until
+    you send a blank message with the "<span class="attrval">0</span>"
+    label.  The "<span class="attrval">0</span>" file is always
+    allocated 125 bytes, and the size cannot be changed.
+    </p>
+
+    <h3>Protocol Formats</h3>
+
+    <p>The Alpha Sign Protocol has three flavors: 3-byte, 2-byte, and
+    1-byte.  The XML interface outputs the 3-byte format.  You
+    can convert 3-byte format into 2-byte or 1-byte by using the
+    scripts, <span class="filename">bb3to2</span> and <span
+    class="filename">bb3to1</span>.</p>
+
+    <h2><a name="alphasign">XML Message Structure</a></h2>
+
+    <p>The complete BBXML message format is defined in <span
+    class="filename"><a
+    href="../xml/alphasign.dtd">alphasign.dtd</a></span>.</p>
+
+    <p>The root element of every message is <code>alphasign</code>.</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;!-- commands go here --&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    <p>The <code>alphasign</code> element has two optional attributes:
+    <code>typeCode</code> and <code>signAddress</code>.  The
+    <code>typeCode</code> attribute is a 1-character code that
+    specifies type of sign that you want to communicate with.  Refer
+    to the <a href="http://www.ams-i.com/Pages/97088061.htm">Alpha
+    protocol documentation</a> for the list of Type Code values.  If
+    you omit this attribute, it will default to "<span
+    class="attrval">Z</span>", the code for "all signs".</p>
+
+    <p>The <code>signAddress</code> attribute is the 2-character
+    uppercase hexadecimal address of the sign (00 - FF).  If you omit
+    this attribute, it defaults to "<code>00</code>", which is the
+    only address that BetaBrite signs respond to.</p>
+
+
+<pre class="codequote">
+&lt;alphasign typeCode="^" signAddress="00"&gt;
+  &lt;!-- commands go here --&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    <p>For BetaBrite, just omit both attributes.</p>
+
+    <p>Since this is XML, you have to escape the characters, "&amp;",
+    "&lt;", and "&gt;".</p>
+
+    <ul>
+      <li>&amp; =&gt; &amp;amp;</li>
+      <li>&lt; =&gt; &amp;lt;</li>
+      <li>&gt; =&gt; &amp;gt;</li>
+    </ul>
+
+    <p>For example, if you want to use typeCode of "<span
+    class="attrval">&amp;</span>":</p>
+
+<pre class="codequote">
+&lt;alphasign typeCode="&amp;amp;"&gt;
+  &lt;!-- commands go here --&gt;
+&lt;/alphasign&gt;
+</pre>
+
+
+    <h2><a name="cmdindex">Command Index</a></h2>
+
+    <p>Inside the <code>alphasign</code> element, include one <a
+    href="#multiple">or more</a> of these commands:</p>
+
+    <table valign="top">
+      <tr><td>
+	  <ul>
+	    <li><a href="#memoryConfig">memoryConfig</a></li>
+	    <li><a href="#text">text</a></li>
+	    <li><a href="#string">string</a></li>
+	    <li><a href="#dots">dots</a></li>
+	    <li><a href="#sequence">sequence</a></li>
+	    <li><a href="#dayScheduleTable">dayScheduleTable</a></li>
+	    <li><a href="#timeScheduleTable">timeScheduleTable</a></li>
+	    <li><a href="#timeOfDay">timeOfDay</a></li>
+	    <li><a href="#dayOfWeek">dayOfWeek</a></li>
+	    <li><a href="#beep">beep</a></li>
+	    <li><a href="#speakerMode">speakerMode</a></li>
+	    <li><a href="#timeFormat">timeFormat</a></li>
+	  </ul>
+	</td>
+	<td>
+	  <ul>
+	    <li><a href="#softReset">softReset</a></li>
+	    <li><a href="#dimmingMode">dimmingMode</a></li>
+	    <li><a href="#clearSerialErrorStatusRegister">clearSerialErrorStatusRegister</a></li>
+	    <li><a href="#calendarDate">calendarDate</a></li>
+	    <li><a href="#counterConfig">counterConfig</a></li>
+	    <li><a href="#counterValue">counterValue</a></li>
+	    <li><a href="#temperatureDisplay">temperatureDisplay</a></li>
+	    <li><a href="#temperatureOffset">temperatureOffset</a></li>
+	    <li><a href="#signAddress">signAddress</a></li>
+	    <li><a href="#xyTextMode">xyTextMode</a></li>
+	    <li><a href="#readCommands">"read" commands</a></li>
+	  </ul>
+	</td>
+      </tr>
+    </table>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;text label="0"&gt;BetaBrite&lt;/text&gt;
+&lt;/alphasign&gt;
+</pre>
+
+
+    <h2><a name="memoryConfig">Configuring the Memory</a></h2>
+
+    <p>To clear the memory and reset it to the factory default
+    configuration, call <code>memoryConfig</code> without any child
+    elements.</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;memoryConfig/&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    <p>After the memory has been reset, only the "<span
+    class="attrval">A</span>" and "<span class="attrval">0</span>"
+    TEXT files are usable.  If you want to use more than that, you
+    have to reserve memory for the files first. Do that by adding
+    child elements to <code>memoryConfig</code>, either <code><a
+    href="#memoryConfig_textConfig">textConfig</a></code>, <code><a
+    href="#memoryConfig_stringConfig">stringConfig</a></code>, or
+    <code><a
+    href="#memoryConfig_dotsConfig">dotsConfig</a></code>.</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;memoryConfig&gt;
+    &lt;textConfig label="A" size="768"/&gt;
+    &lt;textConfig label="D" size="768" start="always" stop="never"/&gt;
+    &lt;textConfig label="m" size="512" start="always" stop="never" locked="true"/&gt;
+    &lt;stringConfig label="D" size="11"/&gt;
+    &lt;stringConfig label="t" size="3"/&gt;
+    &lt;dotsConfig label="A" height="7" width="9" colors="8" locked="false"/&gt;
+  &lt;/memoryConfig&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    <p>This also clears the sign's memory, so you have to configure
+    all files at once.  You cannot add new files without wiping out
+    the existing ones.</p>
+
+    <p>The <code>label</code> attribute is required for all three file
+    types. It is the 1-character name of the file that you are
+    configuring. You can name a STRING file, a TEXT file, and a DOTS
+    file all with the same label without conflict.</p>
+
+    <h3><a name="memoryConfig_textConfig">Text Memory Config</a></h3>
+
+    <p>The <code>size</code> attribute specifies how many bytes to
+    reserve for a <a href="#text">TEXT</a> file. It is required and
+    must contain an integer value.</p>
+
+    <p>The <code>start</code> and <code>stop</code> attributes specify
+    the initial time schedule for the TEXT file.  See <a
+    href="#timeScheduleTable">timeScheduleTable</a> for the list of
+    possible values. These are optional and default to
+    "<code>always</code>" and "<code>never</code>", respectively.</p>
+
+    <p>The <code>locked</code> attribute is optional and defaults to
+    "<code>false</code>". If <code>locked</code> is set to
+    "<code>true</code>", then you will not be able to change the file
+    using the remote control. </p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;memoryConfig&gt;
+    &lt;textConfig label="D" size="768" start="05:00" stop="15:30" locked="true"/&gt;
+  &lt;/memoryConfig&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    <h3><a name="memoryConfig_stringConfig">String Memory Config</a></h3>
+
+    <p>The <code>size</code> attribute specifies how many bytes to
+    reserve for the <a href="#string">STRING</a> file. It is required
+    and must contain an integer value.</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;memoryConfig&gt;
+    &lt;stringConfig label="D" size="11"/&gt;
+  &lt;/memoryConfig&gt;
+&lt;/alphasign&gt;
+</pre>
+
+
+    <h3><a name="memoryConfig_dotsConfig">Dots Memory Config</a></h3>
+
+    <p>The <code>height</code> and <code>width</code> attributes
+    specify the number of pixels to allocate for the DOTS file. Both
+    attributes are required and must contain integer values.</p>
+
+    <p>The <code>colors</code> attribute sets the color status for
+    the DOTS file.  It is optional and defaults to "<span
+    class="attrval">8</span>".  The only valid values are <span
+    class="attrval">1</span>, <span class="attrval">3</span>, and
+    <span class="attrval">8</span>, for monochrome, 3-color, and
+    8-color modes, respectively.</p>
+
+    <p>The <code>locked</code> attribute is optional and defaults to
+    "<span class="attrval">false</span>". If <code>locked</code> is
+    set to "<span class="attrval">true</span>", then you will not be
+    able to change the file using the remote control. </p>
+
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;memoryConfig&gt;
+    &lt;dotsConfig label="A" height="7" width="9" colors="8" locked="false"/&gt;
+  &lt;/memoryConfig&gt;
+&lt;/alphasign&gt;
+</pre>
+
+
+    <h2><a name="text">TEXT files</a></h2>
+
+    <p>A TEXT file is simply a message that you want to display
+    on the sign. To send a TEXT file, use the <code>text</code>
+    element.</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;text label="0"&gt;The quick brown fox jumps over the lazy dog.&lt;/text&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    <p>The required <code>label</code> attribute specifies the
+    1-character file name.</p>
+
+    <p>To clear the contents of a TEXT file, send an empty message.</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;text label="0"/&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    <h3>Breaking up Long Lines</h3>
+
+    <p>Sometimes it's necessary to break up long lines of text in
+    order to make the XML file more readable. If you do this, you need
+    to ensure that the extra line breaks are not included in the text
+    that goes to the sign.  As a first attempt, you might try
+    something like this:</p>
+
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;text label="0"&gt;
+    The quick brown fox
+    jumps over the lazy dog.
+  &lt;/text&gt;
+&lt;/alphasign&gt;
+</pre>
+
+<p>Run that through the processor and see what happens.</p>
+
+<code class="cmd">xsltproc alphasign.xsl dog.xml</code>
+<pre class="codequote">
+_01Z00_02A0
+    The quick brown fox
+    jumps over the lazy dog.
+  _04
+</pre>
+
+
+    <p>That's not quite what you wanted.  If you sent that to the
+    sign, you would see a lot of extra spaces in front of "The" and
+    after "fox".  To avoid this, use the <code>msg</code>
+    element to keep the extra spaces from showing up on the sign.  The
+    <code>msg</code> element encloses significant text within
+    XML tags.  The XML parser then treats the extra spaces as
+    insignificant whitespace.</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;text label="0"&gt;
+    &lt;msg&gt;The quick brown fox &lt;/msg&gt;
+    &lt;msg&gt;jumps over the lazy dog.&lt;/msg&gt;
+  &lt;/text&gt;
+&lt;/alphasign&gt;
+</pre>
+
+
+<p>That's better:</p>
+
+<code class="cmd">xsltproc alphasign.xsl dog.xml</code>
+<pre class="codequote">
+_01Z00_02A0The quick brown fox jumps over the lazy dog._04
+</pre>
+
+
+    <h3>Modes</h3>
+
+    <p>The <code>text</code> element has an optional
+    <code>mode</code> child element. The <code>display</code>
+    attribute is required, and specifies the display effect.  The
+    optional <code>position</code> attribute indicates the vertical
+    position for multiline signs.</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;text label="0"&gt;&lt;mode display="rollUp"/&gt;BetaBrite&lt;mode display="rollDown"/&gt;&lt;/text&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    <p>If no <code>mode</code> element is included, the sign defaults
+      to "automode."  As shown in the example above, you can include a
+      mode after the text as well.  The sign uses that effect to clear
+      the display before showing the next message.</p>
+    
+    <h4>Display Effect</h4>
+
+    <p>Here are the valid values
+    for <code>mode</code>'s <code>display</code> attribute.  Items in
+    the third column produce animated graphics.  Not all signs support
+    all effects.</p>
+
+    <table valign="top">
+      <tr>
+	<td>
+	  <ul>
+	    <li><span class="attrval">hold</span></li>
+	    <li><span class="attrval">rotate</span></li>
+	    <li><span class="attrval">flash</span></li>
+	    <li><span class="attrval">scroll</span></li>
+	    <li><span class="attrval">compressedRotate</span></li>
+	    <li><span class="attrval">explode</span></li>
+	    <li><span class="attrval">clock</span></li>
+	    <li><span class="attrval">twinkle</span></li>
+	    <li><span class="attrval">sparkle</span></li>
+	    <li><span class="attrval">snow</span></li>
+	    <li><span class="attrval">interlock</span></li>
+	    <li><span class="attrval">switch</span></li>
+	    <li><span class="attrval">slide</span></li>
+	    <li><span class="attrval">cycleColors</span></li>
+	    <li><span class="attrval">spray</span></li>
+	    <li><span class="attrval">starburst</span></li>
+	  </ul>
+	</td>
+	<td>
+	  <ul>
+	    <li><span class="attrval">automode</span></li>
+	    <li><span class="attrval">wipeUp</span></li>
+	    <li><span class="attrval">wipeDown</span></li>
+	    <li><span class="attrval">wipeLeft</span></li>
+	    <li><span class="attrval">wipeRight</span></li>
+	    <li><span class="attrval">wipeIn</span></li>
+	    <li><span class="attrval">wipeOut</span></li>
+	    <li><span class="attrval">rollUp</span></li>
+	    <li><span class="attrval">rollDown</span></li>
+	    <li><span class="attrval">rollLeft</span></li>
+	    <li><span class="attrval">rollRight</span></li>
+	    <li><span class="attrval">rollIn</span></li>
+	    <li><span class="attrval">rollOut</span></li>
+	  </ul>
+	</td>
+	<td>
+	  <ul>
+	    <li><span class="attrval">welcome</span></li>
+	    <li><span class="attrval">slotMachine</span></li>
+	    <li><span class="attrval">newsFlash</span></li>
+	    <li><span class="attrval">trumpet</span></li>
+	    <li><span class="attrval">thankYou</span></li>
+	    <li><span class="attrval">noSmoking</span></li>
+	    <li><span class="attrval">drinkAndDrive</span></li>
+	    <li><span class="attrval">runningAnimal</span></li>
+	    <li><span class="attrval">fish</span></li>
+	    <li><span class="attrval">fireworks</span></li>
+	    <li><span class="attrval">turboCar</span></li>
+	    <li><span class="attrval">balloon</span></li>
+	    <li><span class="attrval">cherryBomb</span></li>
+	  </ul>
+	</td>
+      </tr>
+    </table>
+
+
+    <h4>Multiline Position</h4>
+
+    <p>For multiline signs, you may also specify the vertical position
+    of the text with the optional <code>position</code> attribute.
+    The values for <code>position</code> are:</p>
+
+    <ul>
+
+      <li><span class="attrval">middle</span> - text is centered
+      vertically</li>
+
+      <li><span class="attrval">top</span> - text starts on first line
+      of sign</li>
+
+      <li><span class="attrval">bottom</span> - text starts on the
+      line immediately following the line most recently marked as
+      "top"</li>
+
+      <li><span class="attrval">fill</span> - text is centered
+      vertically, filling all available lines</li>
+
+      <li><span class="attrval">left</span> - text begins on the left
+      side of the sign, filling all but 1 line. (Alpha 3.0 protocol
+      only)</li>
+
+      <li><span class="attrval">right</span> - text begins on the left
+      side of the sign, filling all but 1 line. (Alpha 3.0 protocol
+      only) (Yes, the doc says "text begins on the <i>left</i>".  I
+      suspect they meant "right", but I can't be sure.)</li>
+
+    </ul>
+
+    <p>The default value is <span class="attrval">middle</span>.</p>
+
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;text label="0"&gt;&lt;mode display="hold" position="top"&gt;BetaBrite&lt;/text&gt;
+&lt;/alphasign&gt;
+</pre>
+
+
+    <h4>Multiple Modes</h4>
+
+    <p>You can include multiple modes in a single TEXT file.  Simply
+      insert <code>mode</code> elements within the message text, or
+      intersperse <code>mode</code> and <code>msg</code> elements.</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;text label="A"&gt;&lt;mode display="rollDown"/&gt;One&lt;mode display="rollUp"/&gt;Two&lt;mode display="starburst"/&gt;&lt;/text&gt;
+&lt;/alphasign&gt;
+</pre>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;text label="A"&gt;
+    &lt;mode display="rollDown" position="top"/&gt;
+    &lt;msg&gt;Top&lt;/msg&gt;
+    &lt;mode display="starburst" position="top"/&gt;
+    &lt;mode display="rollUp" position="bottom"/&gt;
+    &lt;msg&gt;Bottom&lt;/msg&gt;
+    &lt;mode display="rotate" position="bottom"/&gt;
+  &lt;/text&gt;
+&lt;/alphasign&gt;
+</pre>
+
+
+
+    <h3>Formatting Codes</h3>
+
+    <p>TEXT files can contain formatting codes to change the color and
+    style of the text or to insert special characters.  Not all codes
+    are supported by the BetaBrite; some of them work on Alpha signs
+    only.  See the <a
+    href="http://www.ams-i.com/Pages/97088061.htm">Alpha Sign Protocol
+    documentation</a> for details.</p>
+
+    <h4><a name="colors">Colors</a></h4>
+
+    <ul>
+      <li><code>red</code></li>
+      <li><code>dimred</code></li>
+      <li><code>orange</code></li>
+      <li><code>brown</code></li>
+      <li><code>yellow</code></li>
+      <li><code>amber</code></li>
+      <li><code>green</code></li>
+      <li><code>dimgreen</code></li>
+      <li><code>rainbow1</code></li>
+      <li><code>rainbow2</code></li>
+      <li><code>colormix</code></li>
+      <li><code>autocolor</code></li>
+    </ul>
+
+    <p>When you insert a color code into the message, all of the
+    characters that follow will be in that color.  If you don't
+    specify a color, the sign defaults to autocolor.</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;text label="0"&gt;&lt;green/&gt;The quick &lt;brown/&gt;brown &lt;green/&gt;fox...&lt;/text&gt;
+&lt;/alphasign&gt;
+</pre>
+
+
+    <h4><a name="specialchar">Special Characters and Data</a></h4>
+
+    <ul>
+      <li><code>CR</code> - insert line break</li>
+      <li><code>FF</code> - insert page break</li>
+      <li><code>extendedChar</code>, attribute: <code>offset</code> - insert special character</li>
+      <li><code>time</code> - insert time of day</li>
+      <li><code>date</code>, attribute: <code>format</code> - insert date</li>
+      <li><code>callString</code>, attribute: <code>label</code> - insert STRING file</li>
+      <li><code>callDots</code>, attribute: <code>label</code> - insert DOTS file</li>
+      <li><code>callLargeDots</code>, attribute: <code>label</code> - insert LARGE DOTS PICTURE file</li>
+    </ul>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;text label="0"&gt;
+      &lt;mode display="rotate"/&gt;
+      &lt;msg&gt;Date: &lt;date format="MM/DD/YY"/&gt;&lt;CR/&gt;&lt;/msg&gt;
+      &lt;msg&gt;Time: &lt;time/&gt;&lt;CR/&gt;&lt;/msg&gt;
+      &lt;msg&gt;Temp: &lt;callString label="t"/&gt;&lt;extendedChar offset="49"/&gt;F&lt;CR/&gt;&lt;/msg&gt;
+      &lt;msg&gt;Picture: &lt;callDots label="i"/&gt;&lt;/msg&gt;
+  &lt;/text&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    <p>Use <code>CR</code> to insert a line break. Use <code>FF</code>
+    to insert a page break (only meaningful for multi-line signs).
+    Use <code>time</code> to insert the current time.  </p>
+
+    <p>Use <code>extendedChar</code> and its required
+    <code>offset</code> attribute to insert a special character.
+    Refer to Appendix G in the <a
+    href="http://www.ams-i.com/Pages/97088061.htm">Alpha Sign Protocol
+    documentation</a> for a list of extended characters and their
+    offset codes.  For example, Appendix G says that the control code
+    for the upside-down question mark is "08H + 48H". Therefore,
+    specify "48" as the offset value: <code>&lt;extendedChar
+    offset="48"/&gt;</code>.  The example above inserts the degree
+    symbol, code "49".</p>
+
+    <p>Use <code>date</code> and its required <code>format</code>
+    attribute to insert the current date. (BetaBrite signs don't
+    support <code>date</code> because they don't have an internal
+    calendar.)  The date format attribute must be one of these 10
+    values.</p>
+
+    <ul>
+      <li><span class="attrval">MM/DD/YY</span></li>
+      <li><span class="attrval">DD/MM/YY</span></li>
+      <li><span class="attrval">MM-DD-YY</span></li>
+      <li><span class="attrval">DD-MM-YY</span></li>
+      <li><span class="attrval">MM.DD.YY</span></li>
+      <li><span class="attrval">DD.MM.YY</span></li>
+      <li><span class="attrval">MM DD YY</span></li>
+      <li><span class="attrval">DD MM YY</span></li>
+      <li><span class="attrval">MMM.DD, YYYY</span></li>
+      <li><span class="attrval">day</span></li>
+    </ul>
+
+    
+
+    <p>Use <code>callString</code> and its required
+    <code>label</code> attribute to insert the contents of a <a
+    href="#string">STRING</a> file.</p>
+
+    <p>Use <code>callDots</code> and its required
+    <code>label</code> attribute to insert the contents of a <a
+    href="#dots">DOTS</a> file.</p>
+
+    <p>The <code>callLargeDots</code> command is not supported in this
+    version.</p>
+
+
+    <h4><a name="speeds">Speeds</a></h4>
+
+    <ul>
+      <li><code>noHold</code></li>
+      <li><code>speed1</code> <i>(slowest)</i></li>
+      <li><code>speed2</code> <i>(slower)</i></li>
+      <li><code>speed3</code> <i>(slow)</i></li>
+      <li><code>speed4</code> <i>(default)</i></li>
+      <li><code>speed5</code> <i>(fast)</i></li>
+      <li><code>speedControl</code>, attribute: <code>minutes</code>, <code>seconds</code> or <code>deciseconds</code></li>
+    </ul>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;text label="0"&gt;&lt;mode display="hold"/&gt;&lt;speed5/&gt;The quick brown fox...&lt;noHold/&gt;&lt;/text&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    <p>The <code>noHold</code> speed causes the individual "pages" of
+    the message to display without pausing. Insert it at the beginning
+    of the message to eliminate pause that normally occurs.</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;text label="0"&gt;&lt;mode display="hold"/&gt;&lt;noHold/&gt;&lt;speed5/&gt;The&lt;CR/&gt;quick&lt;CR/&gt;brown&lt;CR/&gt;fox&lt;/text&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    <p>The <code>speedControl</code> code only works on certain Alpha
+    signs.  Use either the <code>seconds</code> attribute or the
+    <code>deciseconds</code> attribute, depending on which one your
+    sign supports.  See the protocol doc for more details.</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;text label="0"&gt;&lt;mode display="rotate"/&gt;&lt;speedControl deciseconds="5"/&gt;zoooooom&lt;/text&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    <h4>Styles</h4>
+
+    <p>Like colors, style control codes turn on a particular format.
+    Text that follows a style control code will display in that style,
+    until you change it with another control code. Not all signs
+    support all styles.</p>
+
+    <table>
+      <tr>
+	<th colspan="2"><a name="styles">Styles</a></th>
+	<th><a name="charset">Character Sets</a></th>
+      </tr>
+      <tr valign="top">
+	<td>
+	  <ul>
+	    <li><code>wideModeOn</code></li>
+	    <li><code>wideModeOff</code></li>
+	    <li><code>doubleHighModeOn</code></li>
+	    <li><code>doubleHighModeOff</code></li>
+	    <li><code>trueDescendersModeOn</code></li>
+	    <li><code>trueDescendersModeOff</code></li>
+	    <li><code>fixedWidthModeOn</code></li>
+	    <li><code>fixedWidthModeOff</code></li>
+	    <li><code>flashModeOn</code></li>
+	    <li><code>flashModeOff</code></li>
+	  </ul>
+	</td>
+	<td>
+	  <ul>
+	    <li><code>wideOn</code></li>
+	    <li><code>wideOff</code></li>
+	    <li><code>doubleWideOn</code></li>
+	    <li><code>doubleWideOff</code></li>
+	    <li><code>trueDescendersOn</code></li>
+	    <li><code>trueDescendersOff</code></li>
+	    <li><code>fixedWidthOn</code></li>
+	    <li><code>fixedWidthOff</code></li>
+	    <li><code>doubleHighOn</code></li>
+	    <li><code>doubleHighOff</code></li>
+	    <li><code>fancyOn</code></li>
+	    <li><code>fancyOff</code></li>
+	    <li><code>shadowOn</code></li>
+	    <li><code>shadowOff</code></li>
+	  </ul>
+	</td>
+	<td>
+	  <ul>
+	    <li><code>standard5</code></li>
+	    <li><code>slim5</code></li>
+	    <li><code>stroke5</code></li>
+	    <li><code>wide5</code></li>
+	    <li><code>wideStroke5</code></li>
+	    <li><code>custom5</code></li>
+
+	    <li><code>standard7</code></li>
+	    <li><code>slim7</code></li>
+	    <li><code>stroke7</code></li>
+	    <li><code>wide7</code></li>
+	    <li><code>custom7</code></li>
+	    <li><code>fancy7</code></li>
+	    <li><code>slimFancy7</code></li>
+	    <li><code>wideFancy7</code></li>
+	    <li><code>shadow7</code></li>
+	    <li><code>shadowFancy7</code></li>
+	    <li><code>strokeFancy7</code></li>
+	    <li><code>wideStroke7</code></li>
+	    <li><code>wideStrokeFancy7</code></li>
+
+	    <li><code>standard10</code></li>
+	    <li><code>custom10</code></li>
+
+	    <li><code>custom15</code></li>
+
+	    <li><code>fullHeightFancy</code></li>
+	    <li><code>fullHeightStandard</code></li>
+
+	    <li><code>auxPortOn</code></li>
+	    <li><code>auxPortOff</code></li>
+	  </ul>
+	</td>
+      </tr>
+    </table>
+
+    <p>On the BetaBrite, you can combine <code>wideModeOn</code> with
+    <code>fancy7</code> to achieve a double-wide effect.  You can also
+    combine <code>fixedWidthModeOn</code> with <code>fancy7</code> to
+    get an unreadable overlapping effect.</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;text label="0"&gt;&lt;mode display="rotate"/&gt;
+    &lt;msg&gt;The &lt;/msg&gt;
+    &lt;msg&gt;&lt;orange/&gt;quick &lt;/msg&gt;
+    &lt;msg&gt;&lt;amber/&gt;brown &lt;/msg&gt;
+    &lt;msg&gt;&lt;dimred/&gt;fox &lt;/msg&gt;
+    &lt;msg&gt;&lt;green/&gt;&lt;wideFancy7/&gt;jumps&lt;/msg&gt;
+    &lt;standard7/&gt;&lt;autocolor/&gt;
+    &lt;msg&gt; over the &lt;/msg&gt;
+    &lt;msg&gt;&lt;wideModeOn/&gt;L&lt;wideModeOff/&gt;&lt;standard5/&gt;azy &lt;/msg&gt;
+    &lt;standard7/&gt;&lt;rainbow3/&gt;
+    &lt;msg&gt;&lt;wideModeOn/&gt;D&lt;wideModeOff/&gt;&lt;standard5/&gt;og&lt;/msg&gt;
+  &lt;/text&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    <h2><a name="string">STRING files</a></h2>
+
+    <p>To send a STRING file, use the <code>string</code> element.</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+    &lt;string label="D"&gt;weasel&lt;/string&gt;
+&lt;/alphasign&gt;
+</pre>
+
+
+    <p>To include the value of a STRING file in a TEXT file, use
+    <code>callString</code> inside the text.</p>
+
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;text label="0"&gt;&lt;mode display="hold"&gt;
+    &lt;msg&gt;The quick brown fox &lt;/msg&gt;
+    &lt;msg&gt;jumps over the lazy &lt;callString label="D"/&gt;.&lt;/msg&gt;
+  &lt;/text&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    <p>The advantage of STRING files is that the sign does not flicker
+    or pause when you send them.  STRING files are good for storing
+    small pieces of information that fit into the bigger template of a
+    TEXT file.</p>
+
+    <p>On some signs, you can also include the commands for <a
+    href="#speeds">speeds</a>, <a href="#charset">character set</a>
+    selection, <a href="#colors">color</a> selection (excluding <span
+    class="attrval">rainbow1</span> and <span
+    class="attrval">rainbow2</span>), or any of the following:</p>
+
+    <ul>
+      <li><a href="#specialchar">CR</a></li>
+      <li><a href="#specialchar">time</a></li>
+      <li><a href="#styles">wideModeOn</a></li>
+      <li><a href="#styles">wideModeOff</a></li>
+      <li><a href="#styles">fixedWidthModeOn</a></li>
+      <li><a href="#styles">fixedWidthModeOff</a></li>
+    </ul>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+    &lt;string label="D"&gt;&lt;wideModeOn/&gt;T&lt;wideModeOff/&gt;ime&lt;CR/&gt;&lt;time/&gt;&lt;/string&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    <h2><a name="dots">DOTS files</a></h2>
+
+    <p>Use the <code>dots</code> element to define arbitrary graphics.
+    Each <code>row</code> element defines one row of pixels (LEDs).  Each
+    digit in a row defines the color of a pixel.</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;!-- a musical note --&gt;
+  &lt;dots label="A"&gt;
+    &lt;row&gt;000011100&lt;/row&gt;
+    &lt;row&gt;000010110&lt;/row&gt;
+    &lt;row&gt;000010011&lt;/row&gt;
+    &lt;row&gt;000010110&lt;/row&gt;
+    &lt;row&gt;011010000&lt;/row&gt;
+    &lt;row&gt;111100000&lt;/row&gt;
+    &lt;row&gt;011000000&lt;/row&gt;
+  &lt;/dots&gt;      	 	  
+&lt;/alphasign&gt;
+</pre>
+
+    <p>The colors are defined as follows.</p>
+
+    <ul>
+      <li><code>0</code> - pixel off</li>
+      <li><code>1</code> - red</li>
+      <li><code>2</code> - green</li>
+      <li><code>3</code> - amber</li>
+      <li><code>4</code> - dim red</li>
+      <li><code>5</code> - dim green</li>
+      <li><code>6</code> - brown</li>
+      <li><code>7</code> - orange</li>
+      <li><code>8</code> - yellow</li>
+    </ul>
+
+    <p>Like STRING files, DOTS files do not display directly, but must
+    be included inside TEXT files.  Insert <code>callDots</code>
+    inside the text message.</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;text label="0"&gt;&lt;mode display="rotate"/&gt;
+    &lt;callDots label="A"/&gt;
+    &lt;callDots label="A"/&gt;
+    &lt;callDots label="A"/&gt;
+    &lt;msg&gt;Now Playing: Jumps Over the Lazy Dog (The Quick Brown Fox)&lt;/msg&gt;
+  &lt;/text&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    <p>Remember that you must use <code>memoryConfig</code> to configure
+    the DOTS file size before sending the DOTS file.  The DOTS message
+    must exactly match the <code>height</code> and <code>width</code>
+    that you configured.</p>
+
+
+    <h2><a name="sequence">Display Sequence</a></h2>
+
+    <p>The <code>sequence</code> element defines the order in which
+    TEXT files are to be displayed.  Include a list of TEXT file labels.</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;sequence labels="AbACAdA"/&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    <p>You may also specify two optional attributes, <code>mode</code>
+    and <code>locked</code>.  Values for the <code>mode</code>
+    attribute are as follows.</p>
+
+    <ul>
+
+      <li><span class="attrval">useTimeSchedule</span> - The specified
+      TEXT files will always run according to the configured time
+      schedule. This is the default value.</li>
+
+      <li><span class="attrval">ignoreTimeSchedule</span> - The
+      specified TEXT files will always run, regardless of each file's
+      time schedule.</li>
+
+      <li><span class="attrval">deleteAtStopTime</span> - The
+      specified TEXT files will run according to their time schedule,
+      and they will be deleted when the scheduled stop time is
+      reached.</li>
+
+    </ul>
+
+    <p>If <code>mode</code> is not specified, then the files will run
+    according to their time schedule.</p>
+
+    <p>The <code>locked</code> attribute may be set to "true" to
+    prevent the files from being edited with the remote control.  The
+    default is "false".</p>
+
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;sequence labels="AbACAdA" mode="ignoreTimeSchedule" locked="true"/&gt;
+&lt;/alphasign&gt;
+</pre>
+
+
+    <h2><a name="dayScheduleTable">Day Schedule Table</a></h2>
+
+    <p>Set the <code>dayScheduleTable</code> when you want certain
+    TEXT files to be displayed only on certain days.</p>
+
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;dayScheduleTable&gt;
+    &lt;daySchedule label="A" start="never" stop="Monday"/&gt;
+    &lt;daySchedule label="b" start="Sunday" stop="Tuesday"/&gt;
+    &lt;daySchedule label="C" start="Monday-Friday" stop="Saturday"/&gt;
+    &lt;daySchedule label="d" start="always" stop="Monday"/&gt;
+  &lt;/dayScheduleTable&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    <table>
+      <tr>
+	<th>start values</th>
+	<th>stop values</th>
+      </tr>
+      <tr valign="top">
+	<td>
+	  <ul>
+	    <li><span class="attrval">daily</span></li>
+	    <li><span class="attrval">Sunday</span></li>
+	    <li><span class="attrval">Monday</span></li>
+	    <li><span class="attrval">Tuesday</span></li>
+	    <li><span class="attrval">Wednesday</span></li>
+	    <li><span class="attrval">Thursday</span></li>
+	    <li><span class="attrval">Friday</span></li>
+	    <li><span class="attrval">Saturday</span></li>
+	    <li><span class="attrval">Monday-Friday</span></li>
+	    <li><span class="attrval">weekends</span></li>
+	    <li><span class="attrval">always</span></li>
+	    <li><span class="attrval">never</span></li>
+	  </ul>
+	</td>
+	<td>
+	  <ul>
+	    <li><span class="attrval">Sunday</span></li>
+	    <li><span class="attrval">Monday</span></li>
+	    <li><span class="attrval">Tuesday</span></li>
+	    <li><span class="attrval">Wednesday</span></li>
+	    <li><span class="attrval">Thursday</span></li>
+	    <li><span class="attrval">Friday</span></li>
+	    <li><span class="attrval">Saturday</span></li>
+	  </ul>
+	</td>
+      </tr>
+    </table>
+
+
+
+    <p>When the <code>start</code> day is <span
+    class="attrval">daily</span>, <span
+    class="attrval">Monday-Friday</span>, <span
+    class="attrval">weekends</span>, <span
+    class="attrval">always</span>, or <span
+    class="attrval">never</span>, the <code>stop</code> day is ignored
+    (but it's still required).</p>
+
+
+
+    <h2><a name="timeScheduleTable">Time Schedule Table</a></h2>
+
+    <p>Use <code>timeScheduleTable</code> to display certain TEXT
+    files at certain times of the day.  The
+    <code>timeSchedule</code>'s <code>start</code> and
+    <code>stop</code> values can be set in 10-minute intervals ("<span
+    class="attrval">00:00</span>", "<span class="attrval">00:10</span>",
+    ..., "<span class="attrval">23:40</span>", "<span
+    class="attrval">23:50</span>"), plus "<span class="attrval">all
+    day</span>", "<span class="attrval">never</span>", and "<span
+    class="attrval">always</span>".</p>
+
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;timeScheduleTable&gt;
+    &lt;timeSchedule label="A" start="always"  stop="11:30"/&gt;
+    &lt;timeSchedule label="b" start="all day" stop="18:00"/&gt;
+    &lt;timeSchedule label="C" start="never"   stop="00:00"/&gt;
+    &lt;timeSchedule label="d" start="08:10"   stop="15:50"/&gt;
+  &lt;/timeScheduleTable&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    <p>When the start time is set to "always", the sign ignores the
+    stop time (but it's still required).  I assume that the same is
+    true for "all day" and "never", but the protocol doc doesn't
+    explicity say.</p>
+
+    <h2><a name="timeOfDay">Time</a></h2>
+
+    <p>To set the sign's internal clock, use <code>timeOfDay</code>
+    with its two required attributes, <code>hour</code> and
+    <code>minute</code>.  Valid values for <code>hour</code> are "<span
+    class="attrval">00</span>"-"<span class="attrval">23</span>", and
+    values for minute are "<span class="attrval">00</span>"-"<span
+    class="attrval">59</span>".</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;timeOfDay hour="19" minute="55"/&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    <h2><a name="dayOfWeek">Day of Week</a></h2>
+
+    <p>If your sign has an internal calendar (BetaBrites don't), you
+    can set the day of week with <code>dayOfWeek</code>.</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;dayOfWeek day="Monday"/&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    <p>Valid values for the required <code>day</code> attribute:</p>
+
+    <ul>
+      <li><span class="attrval">Sunday</span></li>
+      <li><span class="attrval">Monday</span></li>
+      <li><span class="attrval">Tuesday</span></li>
+      <li><span class="attrval">Wednesday</span></li>
+      <li><span class="attrval">Thursday</span></li>
+      <li><span class="attrval">Friday</span></li>
+      <li><span class="attrval">Saturday</span></li>
+    </ul>
+
+    <h2><a name="speakerMode">Set Speaker Mode</a></h2>
+
+    <p>To enable or disable the sign's speaker, use
+    <code>speakerMode</code> with the <code>enabled</code> attribute
+    set to "<span class="attrval">true</span>" or "<span
+    class="attrval">false</span>".</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;speakerMode enabled="true"/&gt;
+&lt;/alphasign&gt;
+</pre>
+
+
+    <h2><a name="timeFormat">Set Time Format</a></h2>
+
+    <p>Set the time format using the <code>timeFormat</code> element.
+    Set the required <code>format</code> attribute to either "<span
+    class="attrval">am-pm</span>" or "<span
+    class="attrval">24-hour</span>".</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;timeFormat format="24-hour"/&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    <p>This controls the way the <code><a
+    href="#specialchar">time</a></code> value is displayed.</p>
+
+    <h2><a name="softReset">Soft Reset</a></h2>
+
+    <p>Send <code>softReset</code> to reboot the sign. This is
+    non-destructive; memory will not be cleared.</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;softReset/&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    <h2><a name="beep">Beep</a></h2>
+    
+    <p>To sound the beeper, use the <code>beep</code> element.</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;beep/&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    <p>The <code>type</code> attribute must be set to "<span
+    class="attrval">on</span>", "<span class="attrval">off</span>",
+    "<span class="attrval">long</span>", or "<span
+    class="attrval">short</span>".</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;beep type="long"/&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    <p>Please note that "<span class="attrval">on</span>" and "<span
+    class="attrval">off</span>" should not be used with signs that
+    have standard speaker/piezo alarms, as it may cause damage to the
+    sign.  There is a warning about this in the <a
+    href="http://www.ams-i.com/Pages/97088061.htm">Alpha Sign Protocol
+    documentation</a>.</p>
+
+    <p>On some signs (not Betabrite), you can use
+    <code>frequency</code>, <code>duration</code>, and
+    <code>repeat</code> attributes instead of the <code>type</code>
+    attribute.</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;beep frequency="120" duration="15" repeat="4"/&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    <p>Valid values:</p>
+    
+    <ul>
+
+      <li><code>frequency</code> - <span
+      class="attrval">0</span>-<span class="attrval">254</span></li>
+
+      <li><code>duration</code> - <span class="attrval">1</span>-<span
+      class="attrval">15</span> <i>(deciseconds)</i></li>
+
+      <li><code>repeat</code> - <span class="attrval">0</span>-<span
+      class="attrval">15</span></li>
+
+    </ul>
+
+
+    
+    <h2><a name="dimmingMode">Set Dimming Mode</a></h2>
+
+    <p>If your sign supports it, you can set the dimming mode with the
+    <code>dimmingMode</code> element and one of two alternative pairs
+    of attributes.</p>
+
+    <p>Form one, for Alpha Solar signs:</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;dimmingMode threshold="19" level="3"/&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    <p>Valid attribute values:</p>
+    
+    <ul>
+
+      <li><code>threshold</code>: <span
+      class="attrval">0</span>-<span class="attrval">21</span>, where
+      <span class="attrval">0</span> means no dimming, <span
+      class="attrval">1</span> means darkest outside, and <span
+      class="attrval">21</span> means brightest outside</li>
+
+      <li><code>level</code>: <span class="attrval">0</span>-<span
+      class="attrval">4</span>, where <span class="attrval">0</span>
+      is 100% brightness and <span class="attrval">4</span> is 44%
+      brightness</li>
+    </ul>
+
+    <p>Form two, for Big Dot signs:</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;dimmingMode start="20:30" stop="06:00"/&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    <p>Valid <code>start</code> and <code>stop</code> time values are
+    the same as for <a
+    href="#timeScheduleTable">timeScheduleTable</a>.</p>
+
+    
+    <h2><a name="clearSerialErrorStatusRegister">Clear Serial Error Status Register</a></h2>
+
+    <p>Send <code>clearSerialErrorStatusRegister</code> to clear the
+    serial error status register.  See the <a
+    href="http://www.ams-i.com/Pages/97088061.htm">Alpha Sign Protocol
+    documentation</a> for an explanation.</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;clearSerialErrorStatusRegister/&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    
+    <h2><a name="calendarDate">Set Calendar Date</a></h2>
+
+    <p>Send <code>calendarDate</code> to set the calendar date, if
+		your sign supports it.
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;calendarDate month="02" day="04" year="06"/&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    
+    <h2><a name="counterConfig">Configure Counters</a></h2>
+
+    <p>Counters are a feature of Alpha signs. Betabrite signs do not
+      support counters.  A counter is a value stored inside the sign
+      that can be incremented automatically once every minute, hour,
+      or day. When a counter reaches its target value, it can trigger
+      the display of a TEXT file. The value of the counter can be
+      displayed in a text message.
+      See <a href="#counterValue">counterValue</a>.</p>
+
+    <p>The <code>counterConfig</code> element allows you to configure
+      the sign's built-in counters. It contains one or
+      more <code>counter</code> child elements.  Each of these
+      configures a specific counter.  Alpha signs have 5 counters,
+      numbered 1-5.
+    </p>
+
+    <p>The <code>counter</code> element has one
+      attribute, <code>id</code>, which identifies the counter.  This
+      is a 1-digit number, <span class="attrval">1-5</span>. It also
+      has 3 child
+      elements: <code>counterOptions</code>, <code>counterValues</code>,
+      and <code>counterSchedule</code>, which specify the
+      configuration parameters.
+    </p>
+
+    <p>The <code>counterOptions</code> element specifies three
+      attributes:</p>
+    <ul>
+      <li><code>enabled</code>: (<span class="attrval">true</span>
+	| <span class="attrval">false</span>) enabled or disables
+	the counter</li>
+      <li><code>eventToCount</code>:
+	(<span class="attrval">minutes</span>
+	| <span class="attrval">hours</span>
+	| <span class="attrval">days</span>) If set
+	to <span class="attrval">minutes</span>, the counter will
+	increment whenever the clock minute changes. If set
+	to <code class="attrval">hours</code>, it will increment
+	whenever the hour changes. If <code class="days">days</code>,
+	it will increment at midnight, when the day changes.</li>
+      <li><code>autoReset</code>: (<span class="attrval">true</span>
+	| <span class="attrval">false</span>) If true, the counter
+	will reset to its start value after it reaches its target
+	value.  If false, it will stay at its target value.
+      </li>
+    </ul>
+
+    <p>The <code>counterValues</code> element specifies four
+      attributes, all integers.</p>
+    <ul>
+      <li><code>start</code>: (<span class="attrval">0</span>
+      - <span class="attrval">99</span>) The starting value of the
+      counter. If autoReset is enabled, this is the value that the
+      counter will reset to.</li>
+      <li><code>increment</code>: (<span class="attrval">-99</span>
+      - <span class="attrval">99</span>) The increment value. Whenever
+      a new <code>eventToCount</code> occurs, the counter will be
+      incremented by this amount. This value can be negative,
+      producing a countdown.</li>
+      <li><code>current</code>: (<span class="attrval">0</span>
+      - <span class="attrval">99</span>) The current value.</li>
+      <li><code>target</code>: (<span class="attrval">0</span>
+      - <span class="attrval">99</span>) The target value. When the
+      counter reaches the target value, it will turn on the TEXT file
+      with a label equal to the counter's id attribute.  That is,
+      counter 1 will call text 1, counter 2 will call text 2,
+      etc.</li>
+    </ul>
+
+
+    <p>The <code>counterSchedule</code> element specifies three
+      attributes.</p>
+    <ul>
+      <li><code>start</code>: This is a time value which specifies
+      the starting time for the counter.  Legal values are the same as
+      for <a href="#timeScheduleTable">timeScheduleTable</a>.</li>
+      <li><code>stop</code>: This is another time value which specifies
+      the stopping time for the counter.  Legal values are the same as
+      for <a href="#timeScheduleTable">timeScheduleTable</a>.</li>
+      <li><code>weekends</code>: (<span class="attrval">true</span>
+	| <span class="attrval">false</span>) If true, the counter
+	will continue counting events on Saturday and Sunday. If
+	false, it will only count on Monday-Friday.</li>
+    </ul>
+
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;counterConfig&gt;
+    &lt;counter id="1"&gt;
+      &lt;counterOptions enabled="true" eventToCount="minutes" autoReset="true"/&gt;
+      &lt;counterValues start="1" increment="1" current="1" target="4"/&gt;
+      &lt;counterSchedule start="00:00" stop="12:00" weekends="true"/&gt;
+    &lt;/counter&gt;
+    &lt;counter id="2"&gt;
+      &lt;counterOptions enabled="false" eventToCount="days" autoReset="false"/&gt;
+      &lt;counterValues start="1" increment="1" current="1" target="5"/&gt;
+      &lt;counterSchedule start="00:00" stop="never" weekends="true"/&gt;
+    &lt;/counter&gt;
+  &lt;/counterConfig&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    
+    <h2><a name="counterValue">Counter Value</a></h2>
+
+    <p>The counter value can be retrieved
+      with <code>counterValue</code> and its <code>id</code>
+      attribute.</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;text label="0"&gt;count: &lt;counterValue id="0"/&gt;&lt;/text&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    
+    <h2><a name="temperatureDisplay">Set Temperature Display Units</a></h2>
+
+    <p>The <code>temperatureDisplay</code> element has one
+      attribute, <code>units</code>, which specifies "F" or "C" as the
+      display units.</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;temperatureDisplay units="F"/&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    
+    <h2><a name="temperatureOffset">Set Temperature Offset Amount</a></h2>
+
+    <p>The <code>temperatureOffset</code> element specifies a
+      correction amount to add to the reading of the sign's internal
+      thermometer.  For all Alpha signs except Solar, the amount is
+      sent in the <code>offset</code> attribute. This value is a
+      single digit integer, positive or
+      negative, <span class="attrval">-9</span>
+      - <span class="attrval">9</span>.  For Solar signs, send the
+      actual temperature in the <code>temperature</code> attribute,
+      and the sign will compute the offset. (It is unclear from the
+      documentation what units to use; unless someone tells me
+      otherwise, I assume that it is in the units specifed
+      by <a href="#temperatureDisplay">temperatureDisplay</a>
+      configuration.)</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;temperatureOffset offset="-5"/&gt;
+&lt;/alphasign&gt;
+</pre>
+
+For Alpha Solar signs:
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;temperatureOffset temperature="73"/&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    
+    <h2><a name="signAddress">Set Serial Address</a></h2>
+
+    <p>The <code>signAddress</code> element changes the sign's serial
+      address.  This is the same address that you must use in
+      the <a href="#alphasign">alphasign</a>
+      element's <code>signAddress</code> attribute. It is a 2
+      character uppercase hex value, 00 - FF.</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;signAddress address="01"/&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    
+    <h2><a name="xyTextMode">Display Text at XY Position</a></h2>
+
+    <p>
+      The <code>xyTextMode</code> element enables or disables the XY
+      positioning mode.  The child element, <code>xyText</code>, with
+      its two required attributes, <code>x</code> and <code>y</code>,
+      set text at an XY position.  To use XY positioning, you must
+      first enable it with an empty <code>xyTextMode</code> element.
+      Then, you can send one or more <code>xyTextMode</code> commands
+      with <code>xyText</code> child elements.  Finally, you must turn
+      off XY positioning by sending
+      <code>xyTextMode</code> again, with the <code>enabled="false"</code>
+      attribute.
+    </p>
+
+    <p>
+      While in XY mode, the sign will ignore all other control codes,
+      except for color selection and the 5-high or 7-high character
+      codes.
+    </p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;!-- first, enable XY mode --&gt;
+  &lt;xyTextMode/&gt;
+  &lt;!-- next, send XY text --&gt;
+  &lt;xyTextMode&gt;
+    &lt;xyText x="1" y="2"&gt;Hello world!&lt;/xyText&gt;
+    &lt;xyText x="2" y="4"&gt;&lt;standard5/&gt;What's &lt;standard7/&gt;up&lt;standard5/&gt;, doc?&lt;/xyText&gt;
+    &lt;xyText x="3" y="10"&gt;&lt;colormix/&gt;Goodbye &lt;red/&gt;world!&lt;/xyText&gt;
+  &lt;/xyTextMode&gt;
+  &lt;!-- finally, disable XY mode --&gt;
+  &lt;xyTextMode enabled="false"/&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    
+<!-- read commands -->
+
+
+    <h2><a name="readCommands">Read Commands</a></h2>
+
+    <p>Although many of the "read" commands are included, BBXML has
+      no provision for actually reading the data from the serial port
+      or converting it into XML.  These commands only send the
+      instruction that makes the sign return the data.  Consult the
+      Alpha Sign Protocol documentation for information about the
+      message format of the returned data.</p>
+
+    <p>The following "read" commands are supported.</p>
+
+    <ul>
+      <li><a name="readText"><code>readText label="<i>label</i>"</code></a></li>
+      <li><a name="readString"><code>readString label="<i>label</i>"</code></a></li>
+      <li><a name="readDots"><code>readDots label="<i>label</i>"</code></a></li>
+      <li><a name="readLargeDots"><code>readLargeDots label="<i>label</i>"</code></a></li>
+      <li><a name="readRGBDots"><code>readRGBDots label="<i>label</i>"</code></a></li>
+      <li><a name="readTimeOfDay"><code>readTimeOfDay</code></a></li>
+      <li><a name="readSpeakerMode"><code>readSpeakerMode</code></a></li>
+      <li><a name="readGeneralInfo"><code>readGeneralInfo</code></a></li>
+      <li><a name="readMemoryPoolSize"><code>readMemoryPoolSize</code></a></li>
+      <li><a name="readMemoryConfig"><code>readMemoryConfig</code></a></li>
+      <li><a name="readMemoryDump"><code>readMemoryDump</code></a></li>
+      <li><a name="readDayOfWeek"><code>readDayOfWeek</code></a></li>
+      <li><a name="readTimeFormat"><code>readTimeFormat</code></a></li>
+      <li><a name="readTimeScheduleTable"><code>readTimeScheduleTable</code></a></li>
+      <li><a name="readSerialErrorStatusRegister"><code>readSerialErrorStatusRegister</code></a></li>
+      <li><a name="readNetworkQuery"><code>readNetworkQuery</code></a></li>
+      <li><a name="readSequence"><code>readSequence</code></a></li>
+      <li><a name="readDayScheduleTable"><code>readDayScheduleTable</code></a></li>
+      <li><a name="readCounters"><code>readCounters</code></a></li>
+      <li><a name="readAlphavisionDOTSMemoryConfig"><code>readAlphavisionDOTSMemoryConfig</code></a></li>
+      <li><a name="readRunFileTimes"><code>readRunFileTimes</code></a></li>
+      <li><a name="readDate"><code>readDate</code></a></li>
+      <li><a name="readDaylightSavingTime"><code>readDaylightSavingTime</code></a></li>
+      <li><a name="readAutoModeTable"><code>readAutoModeTable</code></a></li>
+      <li><a name="readTemperatureOffset"><code>readTemperatureOffset</code></a></li>
+    </ul>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;readText label="B"/&gt;
+&lt;/alphasign&gt;
+</pre>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;readString label="s"/&gt;
+&lt;/alphasign&gt;
+</pre>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;readTimeOfDay/&gt;
+&lt;/alphasign&gt;
+</pre>
+
+
+
+
+    <h1><a name="multiple">Sending Several Commands at Once</a></h1>
+
+    <p>You can combine several commands into a single message, as long
+    as you keep them in a sequence that the sign can handle.  The
+    messages are processed by the sign in the order that they are
+    received -- that is, in the order that you write them.  Certain
+    combinations don't work together.  In particular, you have to send
+    the <code>beep</code> command last, because the sign's serial port
+    is disabled while its beeper is beeping.</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;string label="d"&gt;Sunday, August 1&lt;/string&gt;
+  &lt;text label="A"&gt;&lt;mode display="hold"/&gt;&lt;rainbow1/&gt;BetaBrite&lt;red/&gt;!!!&lt;/text&gt;
+  &lt;text label="D"&gt;&lt;mode display="compressedRotate"/&gt;&lt;callString label="d"/&gt;&lt;/text&gt;
+  &lt;text label="T"&gt;&lt;mode display="wipeUp"/&gt;&lt;orange/&gt;&lt;cs7HighFancy/&gt;&lt;time/&gt;&lt;/text&gt;
+  &lt;timeScheduleTable&gt;
+    &lt;timeSchedule label="A" start="Always" stop="00:00"/&gt;
+    &lt;timeSchedule label="T" start="Always" stop="00:00"/&gt;
+    &lt;timeSchedule label="D" start="06:00"  stop="11:00"/&gt;
+    &lt;timeSchedule label="m" start="Always" stop="00:00"/&gt;
+  &lt;/timeScheduleTable&gt;
+  &lt;sequence labels="ADTD"/&gt;
+  &lt;speakerMode enabled="true"/&gt;
+  &lt;beep type="short"/&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    <p>There is one more restriction to keep in mind. The size of the
+    entire message must be less than the amount of free memory in the
+    sign.  If you do not have much free memory left, you may have to
+    send each command separately.  This is especially true if you are
+    sending several big DOTS files.</p>
+
+    <h1><a name="example">Example Application</a></h1>
+
+    <p>Once you learn to use XML and XSLT, it becomes very easy to put
+    information on your sign.  Consider an application that reads
+    CallerID data from a modem and outputs it as XML.  We can use XSLT
+    to transform the CallerID XML into a BBXML message.</p>
+
+    <p>Here is our <span class="filename">callerID.xml</span> file:</p>
+
+<pre class="codequote">
+&lt;callerID&gt;
+  &lt;date&gt;0429&lt;/date&gt;
+  &lt;time&gt;0050&lt;/time&gt;
+  &lt;nmbr&gt;8885551212&lt;/nmbr&gt;
+  &lt;name&gt;FRED BLOGGS&lt;/name&gt;
+  &lt;mesg/&gt;
+&lt;/callerID&gt;
+</pre>
+
+    <p>Here is the <span class="filename">bbCallerID.xsl</span> file:</p>
+
+<pre class="codequote">
+&lt;xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.1"&gt;
+  &lt;xsl:output indent="yes"/&gt;
+  &lt;xsl:template match="text()|@*"/&gt; &lt;!-- suppress default output --&gt;
+
+  &lt;xsl:template match="callerID"&gt;
+    &lt;xsl:element name="alphasign"&gt;
+      &lt;xsl:element name="text"&gt;
+	&lt;xsl:attribute name="label"&gt;0&lt;/xsl:attribute&gt;
+	&lt;xsl:attribute name="mode"&gt;rollUp&lt;/xsl:attribute&gt;
+	&lt;xsl:element name="green"/&gt;
+	&lt;xsl:apply-templates select="name"/&gt;
+        &lt;xsl:element name="CR"/&gt;
+	&lt;xsl:apply-templates select="nmbr"/&gt;
+      &lt;/xsl:element&gt;
+    &lt;/xsl:element&gt;
+  &lt;/xsl:template&gt;
+
+  &lt;xsl:template match="callerID/nmbr"&gt;
+    &lt;xsl:value-of select="."/&gt;
+  &lt;/xsl:template&gt;
+
+  &lt;xsl:template match="callerID/name"&gt;
+    &lt;xsl:value-of select="."/&gt;
+  &lt;/xsl:template&gt;
+
+&lt;/xsl:stylesheet&gt;
+</pre>
+
+
+    <p>Running that through <code>xsltproc</code>, we get this output.</p>
+
+    <code class="cmd">xsltproc bbCallerId.xsl callerID.xml</code>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;text label="0"&gt;&lt;mode display="rollUp"/&gt;&lt;green/&gt;FRED BLOGGS&lt;CR/&gt;8885551212&lt;/text&gt;
+&lt;/alphasign&gt;
+</pre>
+
+    <p>You can use the XSLT <code><a
+    href="http://www.topxml.com/xsl/funcsubstring.asp">substring()</a></code>
+    function to format the phone number with hyphens. You might also
+    want to handle the special nmbr values, 'P' and 'O', to print
+    "Private" and "Out of Area", respectively. This is left as an
+    exercise for the reader.</p>
+
+    <p>Send it straight to the sign like this:</p>
+
+    <code class="cmd">xsltproc bbCallerId.xsl callerID.xml | bbxml</code>
+
+    <h1><a name="unsupported">Unsupported Features</a></h1>
+
+    <p>"LARGE DOTS PICTURE" file, a feature of certain large Alpha
+    signs, is not supported.</p>
+
+    <p>Although many of the advanced Alpha sign features are included,
+    I have not tested this with anything but my Betabrite 1040 and
+    Alpha 215 signs.  Let me know if you have any problems.</p>
+
+    <h1>License</h1>
+
+    <p>
+      Copyright 2005 Darin Franklin.  BBXML is released under version
+      2 of the <a href="http://www.gnu.org/licenses/gpl.html">GNU
+      General Public License</a>.
+    </p>
+
+    <hr/>
+
+      <a href="../../">[up]</a>
+    <address><a href="mailto:dfranklin@pobox.com">Darin Franklin</a></address>
+  </body>
+</html>

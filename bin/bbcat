@@ -1,0 +1,79 @@
+#!/usr/bin/perl
+# Copyright 2006 Darin Franklin. All rights reserved.
+# Adds delay and checksum to Alpha Sign Protocol messages.
+# You must use the 1-byte format of the protocol.
+#
+# Author: Darin Franklin <dfranklin@pobox.com>
+
+use strict;
+my $STX = "\x02";
+my $ETX = "\x03";
+my $EOT = "\x04";
+
+use Getopt::Long;
+
+my $checksum = 0;
+my $delay_ms = 100;
+
+GetOptions(
+    "checksum" => \$checksum,
+    "delay=i"  => \$delay_ms,
+    );
+
+my $sum = 0;
+my $frames = 0;
+while (<>) {
+    my $c;
+    foreach $c (split '') {
+	if ($checksum) {
+	    if ($c eq $STX) {
+		$sum = cksum(0, $STX);
+	    } elsif (($c eq $EOT) && ($frames == 0)) {
+		$sum = cksum($sum, $ETX);
+		output(sprintf("%s%04X", $ETX, $sum));
+	    } else {
+		$sum = cksum($sum, $c);
+	    }
+	}
+	output($c);
+	if ($checksum) {
+	    if ($c eq $ETX) {
+		output(sprintf("%04X", $sum));
+		$frames++;
+	    }
+	}
+    }
+}
+
+
+
+BEGIN {
+    my $wrotelen = 7;
+    my $wrote = '';
+    sub output {
+	my ($c) = @_;
+	print $c;
+	$wrote = substr("$wrote$c", -1 * $wrotelen);
+	# TODO: This part isn't right. We need to sleep only when we
+	# know that the serial buffer is empty.
+	if (($c eq $STX)	# sleep after STX
+	    ||
+	    ($wrote =~ /${STX}I.....$/)) # sleep after width bytes of DOTS
+    {
+	msleep($delay_ms);
+    }
+}
+}
+
+# sleep for specified milliseconds
+sub msleep($) {
+    my ($delay_ms) = @_;
+    select(undef, undef, undef, $delay_ms / 1000);
+}
+
+# update checksum
+sub cksum($$) {
+    my ($sum, $data) = @_;
+    $sum += ord($data);
+    return $sum & 0xFFFF;
+}

@@ -1,0 +1,63 @@
+#!/usr/bin/perl
+# Copyright 2006 Darin Franklin. All rights reserved.
+use strict;
+use warnings;
+use FileHandle;
+use XML::LibXML;
+use XML::LibXSLT;
+use Getopt::Long;
+
+my $stdout = 0;
+my $verbose = 0;
+my $opt3to1 = 0;
+
+GetOptions(
+	   "stdout" => \$stdout,
+	   "verbose" => \$verbose,
+	   "3to1" => \$opt3to1,
+	   );
+
+my $device=$ENV{BBXML_PORT} || "/dev/betabrite";
+my $basedir=$ENV{BBXML_HOME} || "/opt/bbxml";
+my $xslfn="$basedir/xml/alphasign.xsl";
+
+my $fh = new FileHandle();
+my $parser = XML::LibXML->new;
+my $xsldoc = $parser->parse_file($xslfn) or die $!;
+my $xslt = XML::LibXSLT->new or die $!;
+my $xsl = $xslt->parse_stylesheet($xsldoc) or die $!;
+
+undef $/;
+while (<>) {
+    my $txt = transform($xsl, $parser->parse_string($_));
+    $txt = asign_3to1($txt) if $opt3to1;
+    if ($stdout) {
+	print $txt;
+    } else {
+	print STDERR "Sending $ARGV to $device\n" if $verbose;
+	$fh->open(">$device") or die $!;
+	print $fh $txt;
+	$fh->close;
+    }
+}
+
+sub transform {
+    my ($xsl, $xml) = @_;
+    my $output = $xsl->transform($xml) or die $!;
+    return $xsl->output_string($output);
+}
+
+
+sub asign_3to2 {
+    my $a = shift;
+    $a =~ s/_([0-9A-Fa-f]{2})/"]" . chr(oct("0x$1") + oct("0x20"))/eg;
+    return $a;
+}
+
+sub asign_3to1 {
+    my $a = shift;
+
+    $a =~ s/_([0-9A-Fa-f]{2})/chr(oct("0x$1"))/eg;
+    $a = "\0\0\0\0\0$a";
+    return $a;
+}
