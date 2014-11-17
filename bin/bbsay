@@ -1,0 +1,33 @@
+#!/usr/bin/perl
+# Copyright 2006 Darin Franklin. All rights reserved.
+# Simple command line script to send text to the Betabrite sign.
+# The bbxml script must be in your PATH.
+#
+# Supply text as an argument:
+#   bbsay "hello world"
+#   bbsay --label A "hello world"
+#
+# To clear message, call bbsay with no arguments.
+#   bbsay --label A
+#
+# Author: Darin Franklin <dfranklin@pobox.com>
+
+my $label = "0";
+my $typeCode = "Z";
+my $signAddress = "00";
+
+use Getopt::Long;
+GetOptions(
+	   "label=s" => \$label,
+	   "typeCode=s" => \$typeCode,
+	   "signAddress=s" => \$signAddress,
+	   );
+
+my $msg;
+if (@ARGV) {
+    my $m = shift @ARGV;
+    $msg=qq(<alphasign typeCode="$typeCode" signAddress="$signAddress"><text label="$label" mode="rotate">$m</text></alphasign>);
+} else {
+    $msg=qq(<alphasign typeCode="$typeCode" signAddress="$signAddress"><text label="$label"/></alphasign>);
+}
+system(qq(echo '$msg' | bbxml));

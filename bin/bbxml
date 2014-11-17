@@ -1,0 +1,49 @@
+#!/usr/bin/perl
+# Copyright 2006 Darin Franklin. All rights reserved.
+# Processes XML document with xsltproc and sends to Betabrite serial
+# port.  Set environment variables: $BBXML_HOME and $BBXML_PORT.
+#
+# Author: Darin Franklin <dfranklin@pobox.com>
+
+use strict;
+use warnings;
+use FileHandle;
+use Getopt::Long;
+
+my $verbose = 0;
+my $initport = 0;
+my $basedir=$ENV{BBXML_HOME} || "/opt/bbxml";
+
+GetOptions(
+	   "verbose" => \$verbose,
+	   "initport" => \$initport,
+	   "basedir" => \$basedir,
+	   );
+
+my $device=$ENV{BBXML_PORT} || "/dev/betabrite";
+
+my $xsltproc="/usr/bin/xsltproc";
+my $postproc="$basedir/bin/bb3to1";
+my $bbcat="$basedir/bin/bbcat --checksum";
+my $xsl="$basedir/xml/alphasign.xsl";
+my $cmd = "$xsltproc $xsl - | $postproc | $bbcat  > $device";
+
+if ($initport) {
+    initport();
+} else {
+    undef $/;
+    my $fh = new FileHandle();
+    #print "$cmd\n";
+    #$cmd = "cat -v";
+    while (<>) {
+	print STDERR "Sending $ARGV to $device\n" if $verbose;
+	$fh->open("| $cmd") or die $!;
+	print $fh "$_\n";
+	$fh->close;
+    }
+}
+
+sub initport {
+    # 9600 baud, 7E2, no post processing
+    system "stty -F $device 9600 -opost -ocrnl -onlcr clocal 9600 -parodd cs7 cstopb";
+}
