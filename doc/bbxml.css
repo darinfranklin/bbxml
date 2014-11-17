@@ -1,0 +1,30 @@
+pre.codequote {
+  background-color: #FFFFEE;
+  border-color: #FFFFB2;
+  border-width: thin;
+  border-style: solid;
+}
+img {
+  border-style: solid;
+  border-width: thin;
+}
+span.filename {
+  font-family: monospace;
+}
+code,span.attrval {
+  font-family: monospace;
+}
+code.cmd {
+  color: green;
+}
+div.asciiart { 
+  font-family: monospace;
+  font-size: 8pt;
+  line-height: .9em;
+  background-color: black;
+  color: white;
+  letter-spacing: .2em;
+}
+tr {
+  vertical-align: top;
+}
