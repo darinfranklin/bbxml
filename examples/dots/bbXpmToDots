@@ -1,0 +1,71 @@
+#!/usr/bin/perl
+
+# Converts an XPM image into DOTS format for BetaBrite
+# signs. Post-process with bbDotsToXml to convert into BBXML format.
+#
+# Author: Darin Franklin <dfranklin@pobox.com>
+# http://pobox.com/~dfranklin/bbxml/
+
+use strict;
+my @xpm;
+# read the color map and image data lines
+while (<>) {
+    push @xpm, $1 if /"(.*?)"/;
+}
+die unless @xpm;
+
+# Read the color map from the XPM header.
+# For example,
+#  ' ' => 'black',
+#  '.' => '#00BF00',
+#  'X' => 'green',
+#  'o' => '#BF0000',
+#  'O' => 'red',
+#  '+' => '#FF7F00',
+#  '@' => '#D9BF00',
+#  '#' => '#FFD900',
+#  '$' => 'yellow',
+my %colors;
+my ($width, $height, $count, $dunno) = $xpm[0] =~ /(\d+) (\d+) (\d+) (\d+)/;
+die if not defined $count;
+for (1..$count) {
+    my ($char, $rgbhex) = $xpm[$_] =~ /(.).*?(\S+)$/;
+    $colors{$char} = $rgbhex;
+}
+
+# These are the approximate LED colors used by the BetaBrite sign, as
+# defined in our bb_palette.png file.  In this hash, we assign the
+# appropriate DOTS pixel digit to each color value.
+
+my %bbhex = (
+	     '#000000' => 0,
+	     'black'   => 0,
+	     '#FF0000' => 1,
+	     'red'     => 1,
+	     '#00FF00' => 2,
+	     'green'   => 2,
+	     '#FFD900' => 3,
+	     '#BF0000' => 4,
+	     '#00BF00' => 5,
+	     '#D9BF00' => 6,
+	     '#FF7F00' => 7,
+	     '#FFFF00' => 8,
+	     'yellow'  => 8,
+	     'None'    => 0,
+	     );
+
+# Translate the pixel chars in the XPM lines to the pixel digits for
+# DOTS format. Example: y/ .XoO+@#$/052417638/
+
+my $tr1;
+my $tr2;
+foreach (keys %colors) {
+    $tr1 .= $_;
+    $tr2 .= $bbhex{$colors{$_}};
+}
+
+for my $i ($count + 1 .. $#xpm) {
+    $_ = $xpm[$i];
+    eval "y/$tr1/$tr2/, 1" or die $@;
+    print "$_\n";
+}

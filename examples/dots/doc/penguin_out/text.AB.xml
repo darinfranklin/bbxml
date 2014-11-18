@@ -1,0 +1,39 @@
+<alphasign>
+  <text label="A">
+    <mode display="rollUp"/>
+    <noHold/><speed5/>
+    <callDots label="A"/>
+    <callDots label="B"/>
+    <callDots label="C"/>
+    <callDots label="D"/>
+    <callDots label="E"/>
+    <callDots label="F"/>
+    <callDots label="G"/>
+    <callDots label="H"/>
+    <callDots label="I"/>
+    <callDots label="J"/>
+    <callDots label="K"/>
+    <callDots label="L"/>
+    <callDots label="M"/>
+    <mode display="rollUp"/>
+  </text>
+  <text label="B">
+    <mode display="rollDown"/>
+    <noHold/><speed5/>
+    <callDots label="M"/>
+    <callDots label="L"/>
+    <callDots label="K"/>
+    <callDots label="J"/>
+    <callDots label="I"/>
+    <callDots label="H"/>
+    <callDots label="G"/>
+    <callDots label="F"/>
+    <callDots label="E"/>
+    <callDots label="D"/>
+    <callDots label="C"/>
+    <callDots label="B"/>
+    <callDots label="A"/>
+    <mode display="rollDown"/>
+  </text>
+  <sequence labels="AB"/>
+</alphasign>
