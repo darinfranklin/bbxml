@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Ant build file for BBXML Java example.
+     Copyright 2006 Darin Franklin. All rights reserved. -->
+<project name="bbxml" default="all" basedir=".">
+	<property name="src" location="src" />
+	<property name="src.java" location="${src}/main" />
+	<property name="build" location="build" />
+	<property name="doc" location="${build}/doc" />
+	<property name="bin" location="${build}/classes" />
+	<property name="zipname" value="bbxml_java" />
+	<property name="dist" location="dist" />
+  	<property name="distfiles" location="${dist}/${zipname}" />
+	<property name="jarfile" location="bbxml.jar" />
+	<property name="compile.debug" value="false" />
+
+
+	<target name="compile" description="Compile code">
+		<mkdir dir="${bin}" />
+		<javac srcdir="${src.java}" listfiles="true" destdir="${bin}"
+			/>
+	</target>
+
+	<target name="jar" depends="compile" description="Build jar">
+        <mkdir dir="${distfiles}"/>
+  		<jar destfile="${distfiles}/bbxml.jar"
+             manifest="${src}/config/MANIFEST.MF">
+			<fileset dir="${bin}" includes="**/*.class" />
+			<fileset dir="${src}" includes="**/*.java" />
+		</jar>
+	</target>
+
+	<target name="all" depends="jar" />
+
+	<target name="clean"
+		description="Remove build and dist directories">
+		<delete dir="${build}" />
+		<delete dir="${dist}" />
+	</target>
+
+</project>

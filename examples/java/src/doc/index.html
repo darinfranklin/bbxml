@@ -1,0 +1,134 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>BBXML: Java Example</title>
+    <link rel="stylesheet" type="text/css" href="bbxml.css"/>
+  </head>
+
+  <body>
+    <h1>Java Example</h1>
+
+    <p>Here is a complete Java application that uses the
+      <a href="../../bbxml/xml/alphasign.xsl">alphasign.xsl</a> file from
+      the <a href="../..">BBXML package</a>. It reads your XML command
+      file, transforms it to Alpha Sign protocol, and writes that
+      output to the serial port.</p>
+
+    <h2>Requirements</h2>
+
+    <ul>
+      <li>Java 1.4 or later</li>
+      <li>
+        <a href="http://users.frii.com/jarvi/rxtx/download.html">GNU
+        RXTX package</a>
+      </li>
+    </ul>
+
+    <h2>Setup</h2>
+
+    <p>
+      You will need to install <a href="http://users.frii.com/jarvi/rxtx/download.html">RXTX 2.1</a>
+      for serial port communication.
+      Just copy the .jar and native library files (.dll, .so,
+      .jnilib, etc.) to the jre/lib/ext directory of your Java
+      home directory (C:\j2sdk1.4.2_07\jre\lib\ext, for example).
+    </p>
+
+	<p>
+	<a href="http://rxtx.qbang.org/pub/rxtx/rxtx-2.1-7-bins-r2.zip">Download the RXTX 2.1 zip file</a>
+	</p>
+      
+	<p>        
+	<b>Windows</b><br/>
+	<code class="cmd">
+		copy Windows\i368-mingw32\rxtxSerial.dll  %JAVA_HOME%\jre\lib\ext<br/>
+		copy RXTXcomm.jar  %JAVA_HOME%\jre\lib\ext
+	</code>
+	</p>
+
+    <p>
+	<b>Mac</b><br/>
+	<code class="cmd">
+		sudo cp Mac_OS_X/librxtxSerial.jnilib RXTXcomm.jar  /Library/Java/Extensions
+	</code>
+	</p>
+
+    <h2>Running It</h2>
+
+    <code class="cmd">
+      java -jar bbxml.jar -port COM1 -xsl alphasign.xsl -xml hello.xml
+    </code>
+
+    <p>
+      The serial port name on Windows is "COM1", "COM2", etc.  On Mac
+      OSX, it is something like "/dev/tty.USA19QI1b22P1.1", depending
+      on what device you use.  On Linux, it looks like "/dev/ttyS0".
+    </p>
+
+    <p>If all is well, it should send "hello" to your sign.  You can
+    send the clearmsg.xml file to clear the display.</p>
+
+    <code class="cmd">
+   java -jar bbxml.jar -port COM1 -xsl alphasign.xsl -xml clearmsg.xml
+    </code>
+
+	<p>
+		If you have an old sign like mine that does not understand the 3-byte protocol,
+		add the <code>-proto1</code> flag.
+	</p>
+
+   <code class="cmd">
+      java -jar bbxml.jar -port COM1 -xsl alphasign.xsl -xml hello.xml -proto1
+    </code>
+
+
+	<p>
+		There is also a <code>-read</code> option to read data back from the sign
+		after sending one of the "read" commands.
+	</p>
+
+   <pre class="codequote">
+darin@fuji% java -jar bbxml.jar -port /dev/tty.USA19QIfd35P1.1 -xsl alphasign.xsl -proto1 -xml read.xml -read   
+Experimental:  JNI_OnLoad called.
+Stable Library
+=========================================
+Native lib Version = RXTX-2.1-7
+Java lib Version   = RXTX-2.1-7
+writing...
+reading...
+output (665 bytes):
+_01000_02E 0330_030130_02E$AAU171DFF00ADU07504000_030578_02AA_030087_02IA0750000
+00000000000000000000000000000000000000000000000000000000000000000000000000000_0D
+00000000000000000000000000000000000000000000000000000000000000000000000000000000
+_0D00000000000000000000000000000000000000000000000000000000000000000000000000000
+000_0D00000000000000000000000000000000000000000000000000000000000000000000000000
+000000_0D00000000000000000000000000000000000000000000000000000000000000000000000
+000000000_0D00000000000000000000000000000000000000000000000000000000000000000000
+000000000000_0D00000000000000000000000000000000000000000000000000000000000000000
+000000000000000_0D_036AB6_02E.TUA_030162_02E2A02_03011F_02E&amp;2_0300A2_04
+	</pre>
+
+
+    <h2>The Code</h2>
+
+    <p>
+      There are two main steps for using XML with the Alpha sign.
+    </p>
+      <ol>
+        <li>Transform the command XML file using alphasign.xsl.</li>
+        <li>Write the output of the transform to the serial port.</li>
+      </ol>
+
+    <p>
+      The application code
+      is <a
+      href="dfranklin/bbxml/AlphaSignXMLApp.java.html">AlphaSignXMLApp.java</a>.
+      See comments in that file for further explanation.  The original java file
+		is included inside bbxml.jar.
+    </p>
+
+    <hr>
+      <a href="../../">[up]</a>
+    <address><a href="mailto:dfranklin@pobox.com">Darin Franklin</a></address>
+  </body>
+</html>

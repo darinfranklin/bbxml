@@ -1,10 +1,9 @@
 #!/usr/bin/perl
-
+# Copyright 2006 Darin Franklin. All rights reserved.
 # Converts raw DOTS file to BBXML format. Use to post-process the
 # output of bbXpmToDots.
 #
 # Author: Darin Franklin <dfranklin@pobox.com>
-# http://pobox.com/~dfranklin/bbxml/
 
 use strict;
 use FileHandle;

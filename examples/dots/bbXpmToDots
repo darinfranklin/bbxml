@@ -1,10 +1,9 @@
 #!/usr/bin/perl
-
+# Copyright 2006 Darin Franklin. All rights reserved.
 # Converts an XPM image into DOTS format for BetaBrite
 # signs. Post-process with bbDotsToXml to convert into BBXML format.
 #
 # Author: Darin Franklin <dfranklin@pobox.com>
-# http://pobox.com/~dfranklin/bbxml/
 
 use strict;
 my @xpm;
