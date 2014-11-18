@@ -1,0 +1,159 @@
+#!/usr/bin/perl
+
+# Converts raw DOTS file to BBXML format. Use to post-process the
+# output of bbXpmToDots.
+#
+# Author: Darin Franklin <dfranklin@pobox.com>
+# http://pobox.com/~dfranklin/bbxml/
+
+use strict;
+use FileHandle;
+
+# The input file contains the DOTS image. Each pixel is identified
+# with a number, 0-8.
+
+# 710700000007755171547757000775511700000707
+# 700000000001070007774770077177000000007177
+# 770000007707570007746710777747070077777771
+# ...
+
+use Getopt::Long;
+
+my $outdir = '.';
+my $dotsLabel = 'A';
+my $textLabel = 'A';
+my $height = 7;
+
+GetOptions(
+	   "output=s" => \$outdir,
+	   "dotsLabel=s" => \$dotsLabel,
+	   "textLabel=s" => \$textLabel,
+	   "height=i" => \$height,
+	   );
+
+mkdir $outdir unless -e $outdir;
+
+my @labels;
+my ($width) = printDOTS(\@labels);
+printTEXT();
+printMemoryConfig(\@labels, $width);
+
+my @stack;
+sub unreadLine {
+    push @stack, shift;
+}
+
+sub readLine {
+    return @stack ? pop @stack : <>;
+}
+
+# print the dots files
+sub printDOTS {
+    my ($labels) = @_;
+    my $label = $dotsLabel;
+    my $fh;
+    my $width;
+    while (<>) {
+	chomp;
+	next unless $width = length($_);
+	# start new file
+	if (($. == 1) || (($. - 1) % $height == 0)) {
+	    push @$labels, $label;
+	    $fh = FileHandle->new;
+	    my $fn = "$outdir/dots.$label.xml";
+	    print "Writing $fn\n";
+	    $fh->open(">$fn") or die $@;
+	    print $fh qq(<alphasign>\n);
+	    print $fh qq(  <dots label="$label">\n);
+	    $label++;
+	}
+
+	print $fh qq(<row>$_</row>\n);
+
+	# end this file
+	if (($. % $height == 0)) {
+	    print $fh qq(  </dots>\n);
+	    print $fh qq(</alphasign>\n);
+	    $fh->close();
+	}
+    }
+    # finish the last one
+
+    # pad the last dots file
+    my $j = ($height - $. % $height) % $height;
+    while ($j--) {
+	print $fh qq(<row>) . '0' x $width . qq(</row>\n);
+    }
+    print $fh qq(  </dots>\n);
+    print $fh qq(</alphasign>\n);
+    $fh->close();
+    return ($width);
+}
+
+# print the TEXT file setup
+sub printTEXT {
+    my $label = $textLabel;
+    my $fh = FileHandle->new;
+    my $fn = "$outdir/text." . getLabels($label, 2) . ".xml";
+    print "Writing $fn\n";
+    $fh->open(">$fn") or die $@;
+
+    print $fh qq(<alphasign>\n);
+    print $fh qq(  <text label="$label" mode="rollUp" trailingMode="rollUp">\n);
+    print $fh qq(    <noHold/><speed5/>\n);
+    foreach (@labels) {
+	print $fh qq(    <callDots label="$_"/>\n);
+    }
+    print $fh qq(  </text>\n);
+
+    $label++;
+    print $fh qq(  <text label="$label" mode="rollDown" trailingMode="rollDown">\n);
+    print $fh qq(    <noHold/><speed5/>\n);
+
+    foreach (reverse @labels) {
+	print $fh qq(    <callDots label="$_"/>\n);
+    }
+    print $fh qq(  </text>\n);
+    print $fh qq(  <sequence labels=\");
+    $label = $textLabel;
+    print $fh $label;
+    print $fh ++$label;
+    print $fh qq(\"/>\n);
+    print $fh qq(</alphasign>\n);
+    $fh->close;
+}
+
+# print the memoryConfig commands
+sub printMemoryConfig {
+    my ($labels, $width) = @_;
+    my $fh = FileHandle->new;
+    my $fn = "$outdir/0_memoryConfig." . (join "", @$labels) . ".xml";
+    print "Writing $fn\n";
+    $fh->open(">$fn") or die $@;
+    print $fh qq(<alphasign>\n);
+    print $fh qq(  <memoryConfig>\n);
+
+    # text
+    my $label = $textLabel;
+    my $size = 10 + 2 * @$labels;
+    print $fh qq(  <textConfig label="$label" size="$size"/>\n);
+    $label++;
+    print $fh qq(  <textConfig label="$label" size="$size"/>\n);
+
+    # dots
+    foreach (@$labels) {
+	print $fh qq(  <dotsConfig label="$_" height="$height" width="$width" colors="8"/>\n);
+    }
+    
+    print $fh qq(  </memoryConfig>\n);
+    print $fh qq(</alphasign>\n);
+
+    $fh->close;
+}
+
+sub getLabels {
+    my ($start, $len) = @_;
+    my $label = '';
+    $label .= $start++ while ($len--);
+    return $label;
+}

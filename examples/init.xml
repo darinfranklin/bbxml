@@ -1,0 +1,18 @@
+<alphasign>
+  <memoryConfig>
+    <stringConfig label="d" size="25"/>
+    <stringConfig label="s" size="5"/>
+    <stringConfig label="t" size="3"/>
+    <stringConfig label="D" size="11"/>
+    <textConfig label="A" size="512"/>
+    <textConfig label="B" size="36"/>
+    <textConfig label="D" size="40"/>
+    <textConfig label="K" size="512"/>
+    <textConfig label="M" size="512"/>
+    <textConfig label="N" size="512"/>
+    <textConfig label="O" size="512"/>
+    <textConfig label="P" size="512"/>
+    <textConfig label="m" size="512"/>
+    <dotsConfig label="A" height="7" width="80" colors="8"/>
+  </memoryConfig>
+</alphasign>

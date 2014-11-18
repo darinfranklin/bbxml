@@ -1,0 +1,421 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+  <head>
+    <title>BBXML: Large Graphics on a BetaBrite LED Sign</title>
+    <link rel="stylesheet" href="bbxml.css"/>
+<style type="text/css">
+    .c0 { color: #222222; } /* off */
+    .c1 { color: #FF0000; } /* red   */
+    .c2 { color: #00FF00; } /* green */
+    .c3 { color: #FFD900; } /* amber */
+    .c4 { color: #BF0000; } /* dimred */
+    .c5 { color: #00BF00; } /* dimgreen */
+    .c6 { color: #D9BF00; } /* brown */
+    .c7 { color: #FF7F00; } /* orange */
+    .c8 { color: #FFFF00; } /* yellow */
+    div.asciiart { 
+	border-top: 0em;
+	padding-top: .1em;
+	padding-bottom: .1em;
+	font-family: monospace;
+	font-size: 8pt;
+	background-color: black;
+	line-height: .9em;
+	letter-spacing: .2em;
+    }
+    img.rightalign {
+      float: right;
+    }
+    div.bbscroll {
+      height: 80px;
+      width: 800px;
+      overflow: auto;
+      background-color: black;
+      align: center;
+    }
+    img.bbscroll {
+      border-style: solid;
+      border-top-width: 5px;
+      border-bottom-width: 5px;
+    }
+</style>
+  </head>
+
+  <body>
+    <h1 class="title">Large Graphics on a BetaBrite LED Sign</h1>
+
+    <p>In the <a href="../../../doc/index.html">BBXML User's
+    Guide</a>, I gave an example for creating a 7-pixel-high icon to
+    display in-line with text. That is the typical use of DOTS files.
+    This time, however, I will show you how to display a large graphic
+    file on the BetaBrite sign.</p>
+
+    <h1>Tools Needed</h1>
+    
+    <p>I am using Linux to do this, but you can use this information
+    to produce similar results on any system.  We will be using a
+    command-line graphics editor called <span class="filename"><a
+    href="http://imagemagick.org/script/convert.php">convert</a></span>,
+    which is part of the <a
+    href="http://imagemagick.org">ImageMagick</a> package.  In
+    addition, we will need Perl to run a couple of scripts. And, of
+    course, we need the <a
+    href="../../bbxml/doc/index.html">BBXML</a> stylesheet to
+    convert XML to the Alpha Sign Protocol.</p>
+
+    <p>The scripts and examples in this document can be found on
+    GitHub: <a
+    href="https://github.com/darinfranklin/bbxml/tree/master/examples/dots">https://github.com/darinfranklin/bbxml/tree/master/examples/dots</a>.
+
+    <h1>Getting Started</h1>
+
+    <p>If you are impatient, you can skip this tutorial and jump to
+    the <a href="#short">command line</a>.</p>
+
+    <img class="rightalign" title="Tux" src="../penguin.png"/>
+
+    <p>Let's start with the familiar penguin image on the right. I
+    changed the background to a nice shade of green to provide
+    contrast on the sign.  Obviously, we can't show the whole picture
+    at once on a 1-line sign. What we're going to do is scroll the
+    image up and down, as if looking at it through a mail slot.  Here
+    are the constraints we have to work with.</p>
+
+    <ul>
+      <li>Display size: 80 x 7 pixels (3.3 dots per inch)</li>
+      <li>8 colors, ranging from red to green, plus black</li>
+      <li>8192 bytes of memory</li>
+    </ul>
+
+    <h2>Size</h2>
+
+    <p>We have to scale the image to a width of 80 pixels or less.  It
+    also works out better if we use a height that is a multiple of 7,
+    so the "pages" come out even.</p>
+
+    <h2>Colors</h2>
+
+    <p>A BetaBrite sign can display 8 colors at once: red, dim red,
+    orange, brown, yellow, amber, green, and dim green.  Additionally,
+    we have black when an LED is not turned on.  I created a graphic file,
+    <a href="../bb_palette.png">bb_palette.png</a>, with 9 colors
+    that approximate the colors of the sign.</p>
+
+    <img title="Betabrite palette" width="81" height="7" src="../bb_palette.png"/>
+
+    <p>We will use this file to map the colors in the image to the
+    colors available on the sign.</p>
+
+    <h2>Memory</h2>
+
+    <p>The maximum size of the image that we can show is limited by
+    the amount of available memory.  The sign has 8192 bytes of
+    memory, but we can't use all of it because some unreserved space
+    is needed during communication sessions.  Let's leave about 1024
+    bytes free, which will also give us room for some text
+    messages. That leaves 7168 bytes to work with.</p>
+
+    <p>DOTS files use 1 byte per pixel, plus a few more bytes per file
+    for overhead.  If we were to make the image fill the width of the
+    display, then we would have enough memory for 7168 / 80 = 90 lines
+    of DOTS data.  Round up to 91, because that is evenly divisible by
+    7.  That results in a maximum of 13 "pages" of image data, 80x7
+    each.</p>
+
+    <h1>Converting the Image</h1>
+
+    <p>The <span class="filename"><a
+    href="http://imagemagick.org/script/convert.php">convert</a></span>
+    program is a powerful command-line image editor.  We will use it
+    to do several things:
+
+      <ol>
+	<li>Resize the image to a maximum of 80 pixels wide and 91
+	pixels high, preserving aspect ratio.</li>
+	
+	<li>Convert the color palette, turning off dithering to reduce
+	image noise.</li>
+
+	<li>Output the file as <a
+	href="bb_penguin.png">bb_penguin.png</a>.</li>
+
+      </ol>
+    </p>
+
+    <p>
+    <code class="cmd"> convert -scale 80x91 -map bb_palette.png +dither penguin.png bb_penguin.png</code>
+    </p>
+
+    <p>That produced an image that is 77 x 91 pixels. The total memory
+    for this image will be 7007 bytes, plus a bit more for overhead,
+    which is within our memory constraint.</p>
+
+    <img title="Tux, converted" src="bb_penguin.png"/>
+
+    <p>Run it again, but save as XPM format this time.</p>
+
+    <code class="cmd"> convert -scale 80x91 -map bb_palette.png +dither penguin.png bb_penguin.xpm</code>
+
+
+    <br clear="all"/>
+
+    <p>The XPM format is text based.  Our <a
+    href="bb_penguin.xpm">bb_penguin.xpm</a>
+    file looks like this:</p>
+
+<pre class="codequote">
+/* XPM */
+static char *bb_penguin[] = {
+/* columns rows colors chars-per-pixel */
+"77 91 9 1",
+"  c black",
+". c #00BF00",
+"X c green",
+"o c #BF0000",
+"O c red",
+"+ c #FF7F00",
+"@ c #D9BF00",
+"# c #FFD900",
+"$ c yellow",
+/* pixels */
+"...................................      ....................................",
+"................................            .................................",
+"..............................                ...............................",
+".............................                  ..............................",
+"............................                     ............................",
+"...........................                oo    ............................",
+"...........................                oo     ...........................",
+...etc.
+</pre>
+
+    <p>The first part of the file defines the color palette.  The long
+    lines that follow define the pixels in the image, one character
+    per pixel. It's a simple matter now to convert the XPM data to the
+    DOTS file data.  I wrote a short Perl script named <span
+    class="filename"><a href="../bbXpmToDots">bbXpmToDots</a></span> to
+    take care of that.</p>
+
+    <code class="cmd">./bbXpmToDots bb_penguin.xpm &gt; bb_penguin.dots.txt</code>
+
+    <p>That produces a file, <a
+    href="penguin_out/bb_penguin.dots.txt"><span
+    class="filename">bb_penguin.dots.txt</span></a>, which looks like
+    this.</p>
+
+<pre class="codequote">
+55555555555555555555555555555555555000000555555555555555555555555555555555555
+55555555555555555555555555555555000000000000555555555555555555555555555555555
+55555555555555555555555555555500000000000000005555555555555555555555555555555
+55555555555555555555555555555000000000000000000555555555555555555555555555555
+55555555555555555555555555550000000000000000000005555555555555555555555555555
+55555555555555555555555555500000000000000004400005555555555555555555555555555
+55555555555555555555555555500000000000000004400000555555555555555555555555555
+...etc.
+</pre>
+
+    <p>Now generate the XML files.  I wrote another script, <span
+    class="filename"><a href="../bbDotsToXML">bbDotsToXML</a></span>,
+    to read the DOTS data and produce the BBXML-format commands.  It
+    writes a series of XML files, named <span class="filename"><a
+    href="penguin_out/dots.A.xml">dots.A.xml</a></span>, <span
+    class="filename"><a
+    href="penguin_out/dots.B.xml">dots.B.xml</a></span>, ..., which
+    contain all of the image sections.  The <code>--output</code>
+    option specifies an output directory, which will be created if it
+    does not exist.</p>
+
+    <code class="cmd">./bbDotsToXML --output penguin_out bb_penguin.dots.txt</code>
+
+<pre class="codequote">
+Writing <a href="penguin_out/dots.A.xml">penguin_out/dots.A.xml</a>
+Writing <a href="penguin_out/dots.B.xml">penguin_out/dots.B.xml</a>
+Writing <a href="penguin_out/dots.C.xml">penguin_out/dots.C.xml</a>
+Writing <a href="penguin_out/dots.D.xml">penguin_out/dots.D.xml</a>
+Writing <a href="penguin_out/dots.E.xml">penguin_out/dots.E.xml</a>
+Writing <a href="penguin_out/dots.F.xml">penguin_out/dots.F.xml</a>
+Writing <a href="penguin_out/dots.G.xml">penguin_out/dots.G.xml</a>
+Writing <a href="penguin_out/dots.H.xml">penguin_out/dots.H.xml</a>
+Writing <a href="penguin_out/dots.I.xml">penguin_out/dots.I.xml</a>
+Writing <a href="penguin_out/dots.J.xml">penguin_out/dots.J.xml</a>
+Writing <a href="penguin_out/dots.K.xml">penguin_out/dots.K.xml</a>
+Writing <a href="penguin_out/dots.L.xml">penguin_out/dots.L.xml</a>
+Writing <a href="penguin_out/dots.M.xml">penguin_out/dots.M.xml</a>
+Writing <a href="penguin_out/text.AB.xml">penguin_out/text.AB.xml</a>
+Writing <a href="penguin_out/0_memoryConfig.ABCDEFGHIJKLM.xml">penguin_out/0_memoryConfig.ABCDEFGHIJKLM.xml</a>
+</pre>
+
+    <p>Here is what <span class="filename">dots.A.xml</span> looks like.</p>
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;dots label="A"&gt;
+&lt;row&gt;55555555555555555555555555555555555000000555555555555555555555555555555555555&lt;/row&gt;
+&lt;row&gt;55555555555555555555555555555555000000000000555555555555555555555555555555555&lt;/row&gt;
+&lt;row&gt;55555555555555555555555555555500000000000000005555555555555555555555555555555&lt;/row&gt;
+&lt;row&gt;55555555555555555555555555555000000000000000000555555555555555555555555555555&lt;/row&gt;
+&lt;row&gt;55555555555555555555555555550000000000000000000005555555555555555555555555555&lt;/row&gt;
+&lt;row&gt;55555555555555555555555555500000000000000004400005555555555555555555555555555&lt;/row&gt;
+&lt;row&gt;55555555555555555555555555500000000000000004400000555555555555555555555555555&lt;/row&gt;
+  &lt;/dots&gt;
+&lt;/alphasign&gt;
+</pre>    
+
+
+    <p>The <span class="filename">bbDotsToXML</span> script also
+    writes <span class="filename"><a
+    href="penguin_out/text.AB.xml">text.AB.xml</a></span>, which contains
+    two <code>text</code> commands. The "A" file puts the DOTS files
+    in sequence and displays them with the "rollUp" vertical scrolling
+    effect. The "B" file does the same, but scrolls them in the
+    opposite direction.</p>
+
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;text label="A"&gt;
+    &lt;mode display="rollUp"/&gt;
+    &lt;noHold/&gt;&lt;speed5/&gt;
+    &lt;callDots label="A"/&gt;
+    &lt;callDots label="B"/&gt;
+    &lt;callDots label="C"/&gt;
+    &lt;callDots label="D"/&gt;
+    &lt;callDots label="E"/&gt;
+    &lt;callDots label="F"/&gt;
+    &lt;callDots label="G"/&gt;
+    &lt;callDots label="H"/&gt;
+    &lt;callDots label="I"/&gt;
+    &lt;callDots label="J"/&gt;
+    &lt;callDots label="K"/&gt;
+    &lt;callDots label="L"/&gt;
+    &lt;callDots label="M"/&gt;
+    &lt;mode display="rollUp"/&gt;
+  &lt;/text&gt;
+  &lt;text label="B"&gt;
+    &lt;mode display="rollDown"/&gt;
+    &lt;noHold/&gt;&lt;speed5/&gt;
+    &lt;callDots label="M"/&gt;
+    &lt;callDots label="L"/&gt;
+    &lt;callDots label="K"/&gt;
+    &lt;callDots label="J"/&gt;
+    &lt;callDots label="I"/&gt;
+    &lt;callDots label="H"/&gt;
+    &lt;callDots label="G"/&gt;
+    &lt;callDots label="F"/&gt;
+    &lt;callDots label="E"/&gt;
+    &lt;callDots label="D"/&gt;
+    &lt;callDots label="C"/&gt;
+    &lt;callDots label="B"/&gt;
+    &lt;callDots label="A"/&gt;
+    &lt;mode display="rollDown"/&gt;
+  &lt;/text&gt;
+  &lt;sequence labels="AB"/&gt;
+&lt;/alphasign&gt;
+</pre>
+
+
+    <p>Lastly, <span class="filename">bbDotsToXML</span> writes <span
+    class="filename"><a
+    href="penguin_out/0_memoryConfig.ABCDEFGHIJKLM.xml">0_memoryConfig.ABCDEFGHIJKLM.xml</a></span>,
+    which contains the <code>memoryConfig</code> commands necessary to
+    allocate the DOTS and TEXT files in the sign's memory.</p>
+
+
+<pre class="codequote">
+&lt;alphasign&gt;
+  &lt;memoryConfig&gt;
+  &lt;textConfig label="A" size="36"/&gt;
+  &lt;textConfig label="B" size="36"/&gt;
+  &lt;dotsConfig label="A" height="7" width="77" colors="8"/&gt;
+  &lt;dotsConfig label="B" height="7" width="77" colors="8"/&gt;
+  &lt;dotsConfig label="C" height="7" width="77" colors="8"/&gt;
+  &lt;dotsConfig label="D" height="7" width="77" colors="8"/&gt;
+  &lt;dotsConfig label="E" height="7" width="77" colors="8"/&gt;
+  &lt;dotsConfig label="F" height="7" width="77" colors="8"/&gt;
+  &lt;dotsConfig label="G" height="7" width="77" colors="8"/&gt;
+  &lt;dotsConfig label="H" height="7" width="77" colors="8"/&gt;
+  &lt;dotsConfig label="I" height="7" width="77" colors="8"/&gt;
+  &lt;dotsConfig label="J" height="7" width="77" colors="8"/&gt;
+  &lt;dotsConfig label="K" height="7" width="77" colors="8"/&gt;
+  &lt;dotsConfig label="L" height="7" width="77" colors="8"/&gt;
+  &lt;dotsConfig label="M" height="7" width="77" colors="8"/&gt;
+  &lt;/memoryConfig&gt;
+&lt;/alphasign&gt;
+</pre>
+
+
+    <h1>Sending It</h1>
+
+    <p>All that remains is to send the XML files through the BBXML
+    interface and into the sign.  Use the <span
+    class="filename">bbxml</span> script, as described in the <a
+    href="../../bbxml/doc/index.html#overview">User's
+    Guide</a>:</p>
+
+    <code class="cmd">bbxml --verbose penguin_out/*.xml</code>
+
+<pre class="codequote">
+Sending penguin_out/0_memoryConfig.ABCDEFGHIJKLM.xml to /dev/betabrite
+Sending penguin_out/dots.A.xml to /dev/betabrite
+Sending penguin_out/dots.B.xml to /dev/betabrite
+Sending penguin_out/dots.C.xml to /dev/betabrite
+Sending penguin_out/dots.D.xml to /dev/betabrite
+Sending penguin_out/dots.E.xml to /dev/betabrite
+Sending penguin_out/dots.F.xml to /dev/betabrite
+Sending penguin_out/dots.G.xml to /dev/betabrite
+Sending penguin_out/dots.H.xml to /dev/betabrite
+Sending penguin_out/dots.I.xml to /dev/betabrite
+Sending penguin_out/dots.J.xml to /dev/betabrite
+Sending penguin_out/dots.K.xml to /dev/betabrite
+Sending penguin_out/dots.L.xml to /dev/betabrite
+Sending penguin_out/dots.M.xml to /dev/betabrite
+Sending penguin_out/text.AB.xml to /dev/betabrite
+</pre>
+
+    <p>Remember to send the memoryConfig file first. It comes first
+    alphabetically, so <span class="filename">*.xml</span> does the
+    right thing.  The order of the other files does not matter.</p>
+
+
+    <h1><a name="short">The Short Version</a></h1>
+
+    <p>Now that you've read all that, here's how to do it in one
+    shot.</p>
+
+    <code class="cmd"> convert -scale 80x91 -map bb_palette.png +dither penguin.png xpm:- | bbXpmToDots | bbDotsToXML --output penguin_out && bbxml penguin_out/*.xml</code>
+
+
+
+    <h1>Enjoy</h1>
+
+    <p>Now step back -- way back -- and watch as Tux peeks through his
+    7-pixel-high window.</p>
+
+    <img title="Tux on Betabrite" src="betabrite_penguin01.jpg"/>
+
+
+    <p>Here is a simulation, for those of you who don't have a
+    BetaBrite sign handy. It actually looks much worse on the sign. :)
+    </p>
+
+    <div class="bbscroll">
+    <img class="bbscroll" src="bb_penguin.crop.png.0" width="770"/><br/>
+    <img class="bbscroll" src="bb_penguin.crop.png.1" width="770"/><br/>
+    <img class="bbscroll" src="bb_penguin.crop.png.2" width="770"/><br/>
+    <img class="bbscroll" src="bb_penguin.crop.png.3" width="770"/><br/>
+    <img class="bbscroll" src="bb_penguin.crop.png.4" width="770"/><br/>
+    <img class="bbscroll" src="bb_penguin.crop.png.5" width="770"/><br/>
+    <img class="bbscroll" src="bb_penguin.crop.png.6" width="770"/><br/>
+    <img class="bbscroll" src="bb_penguin.crop.png.7" width="770"/><br/>
+    <img class="bbscroll" src="bb_penguin.crop.png.8" width="770"/><br/>
+    <img class="bbscroll" src="bb_penguin.crop.png.9" width="770"/><br/>
+    <img class="bbscroll" src="bb_penguin.crop.png.10" width="770"/><br/>
+    <img class="bbscroll" src="bb_penguin.crop.png.11" width="770"/><br/>
+    <img class="bbscroll" src="bb_penguin.crop.png.12" width="770"/><br/>
+    </div>
+
+
+    <hr/>
+      <a href="../../../">[up]</a>
+    <address><a href="mailto:dfranklin@pobox.com">Darin Franklin</a></address>
+  </body>
+</html>

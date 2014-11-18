@@ -1,0 +1,19 @@
+<alphasign>
+  <memoryConfig>
+  <textConfig label="A" size="36"/>
+  <textConfig label="B" size="36"/>
+  <dotsConfig label="A" height="7" width="77" colors="8"/>
+  <dotsConfig label="B" height="7" width="77" colors="8"/>
+  <dotsConfig label="C" height="7" width="77" colors="8"/>
+  <dotsConfig label="D" height="7" width="77" colors="8"/>
+  <dotsConfig label="E" height="7" width="77" colors="8"/>
+  <dotsConfig label="F" height="7" width="77" colors="8"/>
+  <dotsConfig label="G" height="7" width="77" colors="8"/>
+  <dotsConfig label="H" height="7" width="77" colors="8"/>
+  <dotsConfig label="I" height="7" width="77" colors="8"/>
+  <dotsConfig label="J" height="7" width="77" colors="8"/>
+  <dotsConfig label="K" height="7" width="77" colors="8"/>
+  <dotsConfig label="L" height="7" width="77" colors="8"/>
+  <dotsConfig label="M" height="7" width="77" colors="8"/>
+  </memoryConfig>
+</alphasign>
